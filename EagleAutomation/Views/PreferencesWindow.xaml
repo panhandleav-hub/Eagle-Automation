@@ -1,0 +1,210 @@
+<Window x:Class="EagleAutomation.Views.PreferencesWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Preferences - Eagle Automation"
+        Height="700" Width="900"
+        Style="{StaticResource DarkWindow}"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Title -->
+            <RowDefinition Height="Auto"/> <!-- Tabs -->
+            <RowDefinition Height="*"/>    <!-- Content -->
+            <RowDefinition Height="Auto"/> <!-- Buttons -->
+        </Grid.RowDefinitions>
+
+        <!-- Title Bar -->
+        <Border Grid.Row="0" Background="#1F1F1F" BorderBrush="#3C3C3C" BorderThickness="0,0,0,1" Padding="20">
+            <TextBlock Text="Preferences" FontSize="20" FontWeight="SemiBold" Foreground="White"/>
+        </Border>
+
+        <!-- Tab Selection -->
+        <Border Grid.Row="1" Background="#2D2D30" BorderBrush="#3C3C3C" BorderThickness="0,0,0,1" Padding="15">
+            <StackPanel Orientation="Horizontal">
+                <Button x:Name="BtnInfoTab" Content="Info" Style="{StaticResource NavButton}" Click="SwitchTab" IsEnabled="False" Background="#0078D4" Foreground="White"/>
+                <Button x:Name="BtnSettingsTab" Content="Settings" Style="{StaticResource NavButton}" Click="SwitchTab"/>
+                <Button x:Name="BtnTimeCodeTab" Content="Time Code" Style="{StaticResource NavButton}" Click="SwitchTab"/>
+                <Button x:Name="BtnPathsTab" Content="File Paths" Style="{StaticResource NavButton}" Click="SwitchTab"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Content Area -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="ContentPanel" Margin="30">
+                
+                <!-- INFO TAB (Default) -->
+                <StackPanel x:Name="InfoTab">
+                    <TextBlock Text="Console Information" Style="{StaticResource SectionHeader}"/>
+                    
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Console Model:" Style="{StaticResource FormLabel}" Margin="0,10"/>
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="Otari Status 18R" Foreground="#888" Margin="0,10"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Module Count:" Style="{StaticResource FormLabel}" Margin="0,10"/>
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="32 Channels" Foreground="#888" Margin="0,10"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Software Version:" Style="{StaticResource FormLabel}" Margin="0,10"/>
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="Eagle Automation v1.0.0" Foreground="#888" Margin="0,10"/>
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Protocol Version:" Style="{StaticResource FormLabel}" Margin="0,10"/>
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="Status 18R RS-232 (Reverse Engineered)" Foreground="#888" Margin="0,10"/>
+                    </Grid>
+                </StackPanel>
+
+                <!-- SETTINGS TAB -->
+                <StackPanel x:Name="SettingsTab" Visibility="Collapsed">
+                    <TextBlock Text="Console Communication" Style="{StaticResource SectionHeader}"/>
+                    
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="COM Port:" Style="{StaticResource FormLabel}" Margin="0,10"/>
+                        <ComboBox x:Name="ComPortCombo" Grid.Row="0" Grid.Column="1" Style="{StaticResource DarkComboBox}" Margin="0,10"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Baud Rate:" Style="{StaticResource FormLabel}" Margin="0,10"/>
+                        <ComboBox Grid.Row="1" Grid.Column="1" Style="{StaticResource DarkComboBox}" Margin="0,10" SelectedIndex="1">
+                            <ComboBoxItem Content="9600"/>
+                            <ComboBoxItem Content="19200"/>
+                            <ComboBoxItem Content="38400"/>
+                            <ComboBoxItem Content="57600"/>
+                        </ComboBox>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Data Bits:" Style="{StaticResource FormLabel}" Margin="0,10"/>
+                        <ComboBox Grid.Row="2" Grid.Column="1" Style="{StaticResource DarkComboBox}" Margin="0,10" SelectedIndex="1">
+                            <ComboBoxItem Content="7"/>
+                            <ComboBoxItem Content="8"/>
+                        </ComboBox>
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Parity:" Style="{StaticResource FormLabel}" Margin="0,10"/>
+                        <ComboBox Grid.Row="3" Grid.Column="1" Style="{StaticResource DarkComboBox}" Margin="0,10" SelectedIndex="0">
+                            <ComboBoxItem Content="None"/>
+                            <ComboBoxItem Content="Odd"/>
+                            <ComboBoxItem Content="Even"/>
+                        </ComboBox>
+
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Connection Status:" Style="{StaticResource FormLabel}" Margin="0,10"/>
+                        <Border Grid.Row="4" Grid.Column="1" Style="{StaticResource StatusIndicator}" 
+                                Background="#002211" BorderBrush="#00FF88" BorderThickness="1" Margin="0,10">
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="8" Height="8" Fill="#00FF88" Margin="0,0,8,0"/>
+                                <TextBlock Text="Connected - Console Responding" Foreground="#00FF88" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <Button Content="Test Connection" Style="{StaticResource PrimaryButton}" Margin="0,20,0,0" Click="TestConnection"/>
+                </StackPanel>
+
+                <!-- TIMECODE TAB -->
+                <StackPanel x:Name="TimeCodeTab" Visibility="Collapsed">
+                    <TextBlock Text="Time Code Configuration" Style="{StaticResource SectionHeader}"/>
+                    
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Frame Rate:" Style="{StaticResource FormLabel}" Margin="0,10"/>
+                        <ComboBox Grid.Row="0" Grid.Column="1" Style="{StaticResource DarkComboBox}" Margin="0,10" SelectedIndex="2">
+                            <ComboBoxItem Content="24 FPS (Film Standard)"/>
+                            <ComboBoxItem Content="25 FPS (PAL Video)"/>
+                            <ComboBoxItem Content="29.97 DF (NTSC Drop Frame)"/>
+                            <ComboBoxItem Content="29.97 NDF (NTSC Non-Drop Frame)"/>
+                            <ComboBoxItem Content="30 FPS (NTSC High Speed)"/>
+                        </ComboBox>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="TC Source:" Style="{StaticResource FormLabel}" Margin="0,10"/>
+                        <ComboBox Grid.Row="1" Grid.Column="1" Style="{StaticResource DarkComboBox}" Margin="0,10" SelectedIndex="0">
+                            <ComboBoxItem Content="LTC (Longitudinal Time Code)"/>
+                            <ComboBoxItem Content="VITC (Vertical Interval Time Code)"/>
+                            <ComboBoxItem Content="Internal Generator (TCGEN)"/>
+                        </ComboBox>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Lock Status:" Style="{StaticResource FormLabel}" Margin="0,10"/>
+                        <Border Grid.Row="2" Grid.Column="1" Style="{StaticResource StatusIndicator}" 
+                                Background="#002211" BorderBrush="#00FF88" BorderThickness="1" Margin="0,10">
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="8" Height="8" Fill="#00FF88" Margin="0,0,8,0"/>
+                                <TextBlock Text="Locked - Stable Sync" Foreground="#00FF88" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+
+                <!-- FILE PATHS TAB -->
+                <StackPanel x:Name="PathsTab" Visibility="Collapsed">
+                    <TextBlock Text="Default Directories" Style="{StaticResource SectionHeader}"/>
+                    
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="200"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Mix Files:" Style="{StaticResource FormLabel}" Margin="0,10"/>
+                        <TextBox Grid.Row="0" Grid.Column="1" Text="C:\Eagle\Mixes" Style="{StaticResource DarkTextBox}" Margin="0,10"/>
+                        <Button Grid.Row="0" Grid.Column="2" Content="Browse..." Style="{StaticResource SmallButton}" Margin="10"/>
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Preset Files:" Style="{StaticResource FormLabel}" Margin="0,10"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Text="C:\Eagle\Presets" Style="{StaticResource DarkTextBox}" Margin="0,10"/>
+                        <Button Grid.Row="1" Grid.Column="2" Content="Browse..." Style="{StaticResource SmallButton}" Margin="10"/>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Backup Directory:" Style="{StaticResource FormLabel}" Margin="0,10"/>
+                        <TextBox Grid.Row="2" Grid.Column="1" Text="C:\Eagle\Backups" Style="{StaticResource DarkTextBox}" Margin="0,10"/>
+                        <Button Grid.Row="2" Grid.Column="2" Content="Browse..." Style="{StaticResource SmallButton}" Margin="10"/>
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Diskmix (Legacy):" Style="{StaticResource FormLabel}" Margin="0,10"/>
+                        <TextBox Grid.Row="3" Grid.Column="1" Text="C:\Data-dm" Style="{StaticResource DarkTextBox}" Margin="0,10"/>
+                        <Button Grid.Row="3" Grid.Column="2" Content="Browse..." Style="{StaticResource SmallButton}" Margin="10"/>
+                    </Grid>
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Bottom Buttons -->
+        <Border Grid.Row="3" Background="#2D2D30" BorderBrush="#3C3C3C" BorderThickness="0,1,0,0" Padding="30,15">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Apply" Style="{StaticResource PrimaryButton}" Margin="0,0,10,0" Click="ApplySettings"/>
+                <Button Content="OK" Style="{StaticResource PrimaryButton}" Margin="0,0,10,0" Click="SaveAndClose"/>
+                <Button Content="Cancel" Style="{StaticResource SecondaryButton}" Click="CloseWindow"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

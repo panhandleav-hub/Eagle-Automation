@@ -1,0 +1,224 @@
+<Window x:Class="EagleAutomation.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Eagle Automation - Otari Status 18R"
+        Height="900" Width="1600"
+        Style="{StaticResource DarkWindow}"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/> <!-- Title Bar -->
+            <RowDefinition Height="Auto"/> <!-- Navigation -->
+            <RowDefinition Height="Auto"/> <!-- Time Code Section -->
+            <RowDefinition Height="*"/>    <!-- Main Content -->
+            <RowDefinition Height="Auto"/> <!-- Status Bar -->
+        </Grid.RowDefinitions>
+
+        <!-- Title Bar -->
+        <Border Grid.Row="0" Background="#1F1F1F" BorderBrush="#3C3C3C" BorderThickness="0,0,0,1" Padding="30,20">
+            <Grid>
+                <TextBlock Text="Eagle Automation - Otari Status 18R" 
+                          FontSize="24" 
+                          FontWeight="SemiBold" 
+                          Foreground="White"
+                          VerticalAlignment="Center"/>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <TextBlock Text="●" Foreground="#00FF88" FontSize="20" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="Console Connected" Foreground="#00FF88" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Navigation Tabs -->
+        <Border Grid.Row="1" Background="#2D2D30" BorderBrush="#3C3C3C" BorderThickness="0,0,0,1" Padding="30,15">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Console" Style="{StaticResource NavButton}" IsEnabled="False" Background="#0078D4" Foreground="White"/>
+                <Button Content="Mix Edit" Style="{StaticResource NavButton}" Click="ShowMixEdit"/>
+                <Button Content="Events" Style="{StaticResource NavButton}" Click="ShowEvents"/>
+                <Button Content="Track Sheet" Style="{StaticResource NavButton}" Click="ShowTrackSheet"/>
+                <Button Content="Preferences" Style="{StaticResource NavButton}" Click="ShowPreferences"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Time Code Display Section -->
+        <Border Grid.Row="2" Background="#2D2D30" BorderBrush="#3C3C3C" BorderThickness="0,0,0,1" Padding="25">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Time Code Display -->
+                <Border Grid.Column="0" Background="Black" CornerRadius="8" Padding="40,20" Margin="0,0,20,0">
+                    <TextBlock x:Name="TimeCodeDisplay" 
+                              Text="00:00:00:00" 
+                              FontFamily="Consolas" 
+                              FontSize="48" 
+                              Foreground="#00FFFF"
+                              FontWeight="Bold"
+                              VerticalAlignment="Center"/>
+                </Border>
+
+                <!-- Time Code Controls -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Frame Rate:" Style="{StaticResource FormLabel}" Margin="0,0,10,0"/>
+                    <ComboBox x:Name="FrameRateCombo" Width="150" Style="{StaticResource DarkComboBox}">
+                        <ComboBoxItem Content="24 FPS"/>
+                        <ComboBoxItem Content="25 FPS"/>
+                        <ComboBoxItem Content="29.97 DF" IsSelected="True"/>
+                        <ComboBoxItem Content="29.97 NDF"/>
+                        <ComboBoxItem Content="30 FPS"/>
+                    </ComboBox>
+                    <Button Content="Reset" Style="{StaticResource SmallButton}" Margin="20,0,0,0"/>
+                </StackPanel>
+
+                <!-- Status Window -->
+                <Border Grid.Column="2" Background="Black" CornerRadius="8" Padding="30,20">
+                    <TextBlock Text="READY" 
+                              FontSize="20" 
+                              FontWeight="Bold" 
+                              Foreground="#00FF88"
+                              VerticalAlignment="Center"/>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- Main Console Content -->
+        <ScrollViewer Grid.Row="3" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+            <Grid Margin="20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="320"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Channel Strips Area -->
+                <Border Grid.Column="0" Background="#2D2D30" CornerRadius="12" BorderBrush="#3C3C3C" BorderThickness="1" Padding="15" Margin="0,0,10,0">
+                    <StackPanel>
+                        <TextBlock Text="Channel Strips (32 Channels)" Style="{StaticResource SectionHeader}"/>
+                        
+                        <!-- Example Channel Strips - First 8 channels shown -->
+                        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                            <StackPanel Orientation="Horizontal">
+                                <!-- Channel 1 -->
+                                <Border Background="#1F1F1F" BorderBrush="#3C3C3C" BorderThickness="1" 
+                                       CornerRadius="8" Padding="10" Margin="5" Width="100">
+                                    <StackPanel>
+                                        <TextBlock Text="CH 1" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                                        <Button Content="MUTE" Style="{StaticResource SmallButton}" Margin="0,2" Padding="8,4"/>
+                                        <Button Content="SOLO" Style="{StaticResource SmallButton}" Margin="0,2" Padding="8,4"/>
+                                        <Button Content="EQ" Style="{StaticResource SmallButton}" Margin="0,2" Padding="8,4"/>
+                                        
+                                        <!-- Fader Placeholder -->
+                                        <Border Background="#000" Height="150" CornerRadius="4" Margin="0,10">
+                                            <TextBlock Text="FADER" Foreground="#555" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        
+                                        <!-- Automation Indicator -->
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0">
+                                            <Ellipse Width="8" Height="8" Fill="#00FF88" Margin="0,0,4,0"/>
+                                            <TextBlock Text="READ" Foreground="#00FF88" FontSize="10"/>
+                                        </StackPanel>
+                                        
+                                        <Button Content="AUTO" Style="{StaticResource SmallButton}" Margin="0,8,0,0" Padding="8,4"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Channels 2-8 (simplified for space) -->
+                                <Border Background="#1F1F1F" BorderBrush="#3C3C3C" BorderThickness="1" 
+                                       CornerRadius="8" Padding="10" Margin="5" Width="100">
+                                    <StackPanel>
+                                        <TextBlock Text="CH 2" Foreground="White" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                                        <Button Content="MUTE" Style="{StaticResource SmallButton}" Margin="0,2" Padding="8,4"/>
+                                        <Button Content="SOLO" Style="{StaticResource SmallButton}" Margin="0,2" Padding="8,4"/>
+                                        <Button Content="EQ" Style="{StaticResource SmallButton}" Margin="0,2" Padding="8,4"/>
+                                        <Border Background="#000" Height="150" CornerRadius="4" Margin="0,10">
+                                            <TextBlock Text="FADER" Foreground="#555" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,8,0,0">
+                                            <Ellipse Width="8" Height="8" Fill="#FF3366" Margin="0,0,4,0"/>
+                                            <TextBlock Text="WRITE" Foreground="#FF3366" FontSize="10"/>
+                                        </StackPanel>
+                                        <Button Content="AUTO" Style="{StaticResource SmallButton}" Margin="0,8,0,0" Padding="8,4"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Add more channel strips as needed... -->
+                                <TextBlock Text="... (Channels 3-32 will be added here)" 
+                                          Foreground="#888" 
+                                          VerticalAlignment="Center" 
+                                          Margin="20"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                        
+                        <TextBlock Text="Note: Full 32-channel implementation coming soon" 
+                                  Foreground="#888" 
+                                  FontSize="12" 
+                                  Margin="0,15,0,0"
+                                  TextAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Right Panel - Controls -->
+                <StackPanel Grid.Column="1">
+                    <!-- Mix Controls -->
+                    <Border Background="#2D2D30" CornerRadius="12" BorderBrush="#3C3C3C" BorderThickness="1" Padding="20" Margin="0,0,0,10">
+                        <StackPanel>
+                            <TextBlock Text="Mix Controls" Style="{StaticResource SectionHeader}"/>
+                            <Button Content="NEW" Style="{StaticResource PrimaryButton}" Margin="0,5"/>
+                            <Button Content="ARCHIVE" Style="{StaticResource SecondaryButton}" Margin="0,5"/>
+                            <Button Content="UNDO" Style="{StaticResource SecondaryButton}" Margin="0,5"/>
+                            <Button Content="REDO" Style="{StaticResource SecondaryButton}" Margin="0,5"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Automation Modes -->
+                    <Border Background="#2D2D30" CornerRadius="12" BorderBrush="#3C3C3C" BorderThickness="1" Padding="20" Margin="0,0,0,10">
+                        <StackPanel>
+                            <TextBlock Text="Automation Modes" Style="{StaticResource SectionHeader}"/>
+                            <Button x:Name="BtnRead" Content="READ" Style="{StaticResource SecondaryButton}" Margin="0,5" Click="SetAutomationMode"/>
+                            <Button x:Name="BtnWrite" Content="WRITE" Style="{StaticResource PrimaryButton}" Margin="0,5" Click="SetAutomationMode"/>
+                            <Button x:Name="BtnUpdate" Content="UPDATE" Style="{StaticResource SecondaryButton}" Margin="0,5" Click="SetAutomationMode"/>
+                            <Button x:Name="BtnTouch" Content="TOUCH" Style="{StaticResource SecondaryButton}" Margin="0,5" Click="SetAutomationMode"/>
+                            <Button x:Name="BtnIsolate" Content="ISOLATE" Style="{StaticResource SecondaryButton}" Margin="0,5" Click="SetAutomationMode"/>
+                            <Button x:Name="BtnGlide" Content="GLIDE" Style="{StaticResource SecondaryButton}" Margin="0,5" Click="SetAutomationMode"/>
+                            <Button Content="ALL READ" Style="{StaticResource SecondaryButton}" Margin="0,15,0,5"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Transport Controls -->
+                    <Border Background="#2D2D30" CornerRadius="12" BorderBrush="#3C3C3C" BorderThickness="1" Padding="20">
+                        <StackPanel>
+                            <TextBlock Text="Transport" Style="{StaticResource SectionHeader}"/>
+                            <Button Content="⏮" Style="{StaticResource SecondaryButton}" Margin="0,5" FontSize="20"/>
+                            <Button Content="▶" Style="{StaticResource PrimaryButton}" Margin="0,5" FontSize="20"/>
+                            <Button Content="⏸" Style="{StaticResource SecondaryButton}" Margin="0,5" FontSize="20"/>
+                            <Button Content="⏹" Style="{StaticResource SecondaryButton}" Margin="0,5" FontSize="20"/>
+                            <Button Content="⏭" Style="{StaticResource SecondaryButton}" Margin="0,5" FontSize="20"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="4" Background="#1F1F1F" BorderBrush="#3C3C3C" BorderThickness="0,1,0,0" Padding="20,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="COM Port: COM1 @ 19200 baud" Foreground="#AAA" Margin="0,0,20,0"/>
+                    <TextBlock Text="●" Foreground="#00FF88" Margin="0,0,5,0"/>
+                    <TextBlock Text="Console: 32 Modules" Foreground="#AAA" Margin="0,0,20,0"/>
+                    <TextBlock Text="Mix: Untitled_001" Foreground="#AAA"/>
+                </StackPanel>
+                
+                <TextBlock Grid.Column="1" Text="Eagle Automation v1.0.0" Foreground="#666"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

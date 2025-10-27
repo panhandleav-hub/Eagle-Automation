@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>Resources\icon.ico</ApplicationIcon>
+    <AssemblyName>EagleAutomation</AssemblyName>
+    <RootNamespace>EagleAutomation</RootNamespace>
+    <Version>1.0.0</Version>
+    <Authors>Eagle Automation Development Team</Authors>
+    <Company>Eagle Automation</Company>
+    <Product>Eagle Automation - Otari Status 18R Controller</Product>
+    <Description>Modern automation software for Otari Status 18R mixing console</Description>
+    <Copyright>Copyright © 2025</Copyright>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Serial Port Communication -->
+    <PackageReference Include="System.IO.Ports" Version="8.0.0" />
+    
+    <!-- JSON Configuration Files -->
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
