@@ -1,4 +1,6 @@
+using System;
 using System.IO.Ports;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using EagleAutomation.Controllers;
@@ -17,8 +19,9 @@ namespace EagleAutomation.Views
             InitializeComponent();
             _serialController = serialController;
 
-            // Populate COM port list
+            // Populate COM port list and load current configuration
             LoadAvailableComPorts();
+            LoadCurrentConfiguration();
         }
 
         /// <summary>
@@ -29,14 +32,14 @@ namespace EagleAutomation.Views
             try
             {
                 string[] ports = SerialPort.GetPortNames();
-                
+
                 foreach (string port in ports)
                 {
                     ComPortCombo.Items.Add(port);
                 }
 
-                // Select first port if available
-                if (ComPortCombo.Items.Count > 0)
+                // Will select configured port in LoadCurrentConfiguration()
+                if (ComPortCombo.Items.Count > 0 && ComPortCombo.SelectedItem == null)
                 {
                     ComPortCombo.SelectedIndex = 0;
                 }
@@ -48,6 +51,53 @@ namespace EagleAutomation.Views
                     "Error",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error
+                );
+            }
+        }
+
+        /// <summary>
+        /// Load current configuration into UI controls
+        /// </summary>
+        private void LoadCurrentConfiguration()
+        {
+            try
+            {
+                var config = App.Configuration;
+
+                // Serial Port Settings
+                if (ComPortCombo.Items.Contains(config.SerialPort.PortName))
+                {
+                    ComPortCombo.SelectedItem = config.SerialPort.PortName;
+                }
+
+                // Baud Rate
+                BaudRateCombo.SelectedItem = BaudRateCombo.Items
+                    .Cast<ComboBoxItem>()
+                    .FirstOrDefault(item => item.Content.ToString() == config.SerialPort.BaudRate.ToString());
+
+                // Data Bits
+                DataBitsCombo.SelectedItem = DataBitsCombo.Items
+                    .Cast<ComboBoxItem>()
+                    .FirstOrDefault(item => item.Content.ToString() == config.SerialPort.DataBits.ToString());
+
+                // Parity
+                ParityCombo.SelectedItem = ParityCombo.Items
+                    .Cast<ComboBoxItem>()
+                    .FirstOrDefault(item => item.Content.ToString() == config.SerialPort.Parity);
+
+                // File Paths
+                MixFilesPathText.Text = config.FilePaths.MixFilesDirectory;
+                PresetsPathText.Text = config.FilePaths.PresetsDirectory;
+                BackupPathText.Text = config.FilePaths.BackupDirectory;
+                DiskmixPathText.Text = config.FilePaths.DiskmixDirectory;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Error loading configuration: {ex.Message}",
+                    "Configuration Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning
                 );
             }
         }
@@ -127,6 +177,9 @@ namespace EagleAutomation.Views
             }
 
             string portName = ComPortCombo.SelectedItem.ToString() ?? "COM1";
+            int baudRate = GetSelectedBaudRate();
+            int dataBits = GetSelectedDataBits();
+            Parity parity = GetSelectedParity();
 
             // Disconnect first if connected
             if (_serialController.IsConnected)
@@ -134,13 +187,17 @@ namespace EagleAutomation.Views
                 _serialController.Disconnect();
             }
 
-            // Try to connect
-            bool success = _serialController.Connect(portName, 19200);
+            // Try to connect with current UI settings
+            bool success = _serialController.Connect(portName, baudRate, dataBits, parity);
 
             if (success)
             {
                 MessageBox.Show(
-                    $"Successfully connected to console on {portName}",
+                    $"Successfully connected to console\n" +
+                    $"Port: {portName}\n" +
+                    $"Baud Rate: {baudRate}\n" +
+                    $"Data Bits: {dataBits}\n" +
+                    $"Parity: {parity}",
                     "Connection Test Successful",
                     MessageBoxButton.OK,
                     MessageBoxImage.Information
@@ -166,14 +223,27 @@ namespace EagleAutomation.Views
         /// </summary>
         private void ApplySettings(object sender, RoutedEventArgs e)
         {
-            // TODO: Save settings to configuration file
-            MessageBox.Show(
-                "Settings applied successfully.\n\n" +
-                "Note: Some settings may require restarting the application to take effect.",
-                "Settings Applied",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information
-            );
+            try
+            {
+                SaveConfigurationFromUI();
+
+                MessageBox.Show(
+                    "Settings applied successfully.\n\n" +
+                    "Note: Some settings may require reconnecting to the console to take effect.",
+                    "Settings Applied",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information
+                );
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Error saving settings: {ex.Message}",
+                    "Save Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error
+                );
+            }
         }
 
         /// <summary>
@@ -181,9 +251,102 @@ namespace EagleAutomation.Views
         /// </summary>
         private void SaveAndClose(object sender, RoutedEventArgs e)
         {
-            // TODO: Save settings to configuration file
-            this.DialogResult = true;
-            this.Close();
+            try
+            {
+                SaveConfigurationFromUI();
+                this.DialogResult = true;
+                this.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    $"Error saving settings: {ex.Message}",
+                    "Save Error",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error
+                );
+            }
+        }
+
+        /// <summary>
+        /// Save configuration from UI controls to App.Configuration and appsettings.json
+        /// </summary>
+        private void SaveConfigurationFromUI()
+        {
+            // Update configuration object with values from UI
+            if (ComPortCombo.SelectedItem != null)
+            {
+                App.Configuration.SerialPort.PortName = ComPortCombo.SelectedItem.ToString() ?? "COM1";
+            }
+
+            App.Configuration.SerialPort.BaudRate = GetSelectedBaudRate();
+            App.Configuration.SerialPort.DataBits = GetSelectedDataBits();
+            App.Configuration.SerialPort.Parity = GetSelectedParityString();
+
+            // File Paths
+            App.Configuration.FilePaths.MixFilesDirectory = MixFilesPathText.Text;
+            App.Configuration.FilePaths.PresetsDirectory = PresetsPathText.Text;
+            App.Configuration.FilePaths.BackupDirectory = BackupPathText.Text;
+            App.Configuration.FilePaths.DiskmixDirectory = DiskmixPathText.Text;
+
+            // Save to appsettings.json
+            App.SaveConfiguration();
+        }
+
+        /// <summary>
+        /// Get selected baud rate from combo box
+        /// </summary>
+        private int GetSelectedBaudRate()
+        {
+            if (BaudRateCombo.SelectedItem is ComboBoxItem item)
+            {
+                return int.Parse(item.Content.ToString() ?? "19200");
+            }
+            return 19200;
+        }
+
+        /// <summary>
+        /// Get selected data bits from combo box
+        /// </summary>
+        private int GetSelectedDataBits()
+        {
+            if (DataBitsCombo.SelectedItem is ComboBoxItem item)
+            {
+                return int.Parse(item.Content.ToString() ?? "8");
+            }
+            return 8;
+        }
+
+        /// <summary>
+        /// Get selected parity as enum
+        /// </summary>
+        private Parity GetSelectedParity()
+        {
+            if (ParityCombo.SelectedItem is ComboBoxItem item)
+            {
+                return item.Content.ToString() switch
+                {
+                    "None" => Parity.None,
+                    "Odd" => Parity.Odd,
+                    "Even" => Parity.Even,
+                    "Mark" => Parity.Mark,
+                    "Space" => Parity.Space,
+                    _ => Parity.None
+                };
+            }
+            return Parity.None;
+        }
+
+        /// <summary>
+        /// Get selected parity as string
+        /// </summary>
+        private string GetSelectedParityString()
+        {
+            if (ParityCombo.SelectedItem is ComboBoxItem item)
+            {
+                return item.Content.ToString() ?? "None";
+            }
+            return "None";
         }
 
         /// <summary>

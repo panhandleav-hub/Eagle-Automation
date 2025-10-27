@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Sheet - Eagle Automation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        /* Main container */
+        .main-window {
+            background: #252526;
+            border-radius: 16px;
+            max-width: 1600px;
+            margin: 0 auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+            border: 1px solid #3c3c3c;
+        }
+        
+        /* Title bar */
+        .title-bar {
+            background: #1f1f1f;
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #3c3c3c;
+        }
+        
+        .title-bar h1 {
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .title-bar .controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .title-bar button {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 18px;
+        }
+        
+        .title-bar button:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+        
+        /* Page navigation */
+        .page-navigation {
+            background: #2d2d30;
+            padding: 15px 30px;
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid #3c3c3c;
+        }
+        
+        .page-nav-link {
+            background: transparent;
+            border: none;
+            padding: 10px 20px;
+            color: #888;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .page-nav-link:hover {
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+        }
+        
+        .page-nav-link.active {
+            background: #0078d4;
+            color: white;
+        }
+        
+        /* Main content */
+        .content {
+            padding: 20px;
+        }
+        
+        /* Header section */
+        .sheet-header {
+            background: #2d2d30;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid #3c3c3c;
+        }
+        
+        .sheet-title {
+            color: #0078d4;
+            font-size: 18px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+        
+        .sheet-info {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .info-label {
+            color: #888;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .info-value {
+            background: #1e1e1e;
+            border: 1px solid #3c3c3c;
+            color: #e0e0e0;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .info-value input {
+            background: transparent;
+            border: none;
+            color: #e0e0e0;
+            width: 100%;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .info-value input:focus {
+            outline: none;
+        }
+        
+        /* Help text */
+        .help-text {
+            background: rgba(0,120,212,0.1);
+            border: 1px solid #0078d4;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #e0e0e0;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .help-text strong {
+            color: #0078d4;
+        }
+        
+        /* Track sheet table */
+        .track-sheet-container {
+            background: #2d2d30;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #3c3c3c;
+            overflow-x: auto;
+        }
+        
+        .track-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .track-table thead {
+            position: sticky;
+            top: 0;
+            background: #1e1e1e;
+            z-index: 5;
+        }
+        
+        .track-table th {
+            text-align: left;
+            padding: 15px 12px;
+            color: #0078d4;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid #0078d4;
+        }
+        
+        .track-table th:first-child {
+            text-align: center;
+            width: 80px;
+        }
+        
+        .track-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #3c3c3c;
+        }
+        
+        .track-table tr {
+            transition: all 0.2s;
+        }
+        
+        .track-table tr:hover {
+            background: rgba(0,120,212,0.05);
+        }
+        
+        .channel-number {
+            text-align: center;
+            font-weight: 700;
+            color: #0078d4;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .track-input {
+            background: #1e1e1e;
+            border: 1px solid #3c3c3c;
+            color: #e0e0e0;
+            padding: 8px 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            width: 100%;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+        
+        .track-input:focus {
+            outline: none;
+            border-color: #0078d4;
+            background: #252526;
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.2);
+        }
+        
+        .track-input.label-input {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            text-transform: uppercase;
+            max-width: 120px;
+        }
+        
+        .track-input.notes-input {
+            min-width: 250px;
+        }
+        
+        .char-count {
+            font-size: 10px;
+            color: #666;
+            margin-left: 5px;
+        }
+        
+        .char-count.warning {
+            color: #ff9800;
+        }
+        
+        .char-count.error {
+            color: #ff3366;
+        }
+        
+        /* Action bar */
+        .action-bar {
+            background: #2d2d30;
+            padding: 20px 30px;
+            border-top: 1px solid #3c3c3c;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .action-bar-left {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .action-bar-right {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: 1px solid #3c3c3c;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: rgba(255,255,255,0.05);
+            color: #888;
+        }
+        
+        .btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border-color: #0078d4;
+        }
+        
+        .btn-primary {
+            background: #0078d4;
+            color: white;
+            border-color: #0078d4;
+        }
+        
+        .btn-primary:hover {
+            background: #005a9e;
+            box-shadow: 0 4px 15px rgba(0,120,212,0.3);
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            background: rgba(255,51,102,0.1);
+            color: #ff3366;
+            border-color: #ff3366;
+        }
+        
+        .btn-danger:hover {
+            background: #ff3366;
+            color: white;
+            box-shadow: 0 4px 15px rgba(255,51,102,0.3);
+        }
+        
+        /* Quick actions toolbar */
+        .quick-actions {
+            background: #2d2d30;
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border: 1px solid #3c3c3c;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .quick-actions-label {
+            color: #888;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .quick-actions-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .quick-btn {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #3c3c3c;
+            color: #888;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .quick-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border-color: #0078d4;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-window">
+        <!-- Title Bar -->
+        <div class="title-bar">
+            <h1>Eagle Automation - Otari Status 18R</h1>
+            <div class="controls">
+                <button title="Minimize">−</button>
+                <button title="Maximize">□</button>
+                <button title="Close">×</button>
+            </div>
+        </div>
+        
+        <!-- Page Navigation -->
+        <div class="page-navigation">
+            <a href="eagle_automation_modern_clean.html" class="page-nav-link">Console</a>
+            <a href="mix_edit_page.html" class="page-nav-link">Mix Edit</a>
+            <a href="events_page.html" class="page-nav-link">Events</a>
+            <a href="track_sheet_page.html" class="page-nav-link active">Track Sheet</a>
+            <a href="preferences_page.html" class="page-nav-link">Preferences</a>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="content">
+            <!-- Header Section -->
+            <div class="sheet-header">
+                <div class="sheet-title">Session Information</div>
+                <div class="sheet-info">
+                    <div class="info-item">
+                        <label class="info-label">Mix Name</label>
+                        <div class="info-value">
+                            <input type="text" value="Untitled_001" placeholder="Enter mix name...">
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <label class="info-label">Session Date</label>
+                        <div class="info-value">
+                            <input type="text" value="2025-10-26" placeholder="YYYY-MM-DD">
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <label class="info-label">Engineer</label>
+                        <div class="info-value">
+                            <input type="text" value="" placeholder="Enter engineer name...">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Help Text -->
+            <div class="help-text">
+                <strong>Navigation:</strong> Use <strong>TAB</strong> to advance to next field (right then down), 
+                <strong>Arrow Keys</strong> to move between fields, and <strong>SPACE</strong> to clear field contents. 
+                The first <strong>4 characters</strong> of Mix and Chan labels will appear on the Console window under each channel.
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="quick-actions">
+                <span class="quick-actions-label">Quick Actions:</span>
+                <div class="quick-actions-buttons">
+                    <button class="quick-btn" onclick="clearAllLabels()">Clear All Labels</button>
+                    <button class="quick-btn" onclick="clearAllNotes()">Clear All Notes</button>
+                    <button class="quick-btn" onclick="autoNumberChannels()">Auto-Number Channels</button>
+                    <button class="quick-btn" onclick="importFromClipboard()">Import from Clipboard</button>
+                    <button class="quick-btn" onclick="exportToClipboard()">Export to Clipboard</button>
+                </div>
+            </div>
+            
+            <!-- Track Sheet Table -->
+            <div class="track-sheet-container">
+                <table class="track-table">
+                    <thead>
+                        <tr>
+                            <th>Channel</th>
+                            <th>Mix Label</th>
+                            <th>Chan Label</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="channel-number">CH 1</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..." 
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 2</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 3</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4" value="KICK">
+                                <span class="char-count">4/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4" value="KICK">
+                                <span class="char-count">4/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes..." value="Bass drum - AKG D112">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 4</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4" value="SNARE">
+                                <span class="char-count">5/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4" value="SNAR">
+                                <span class="char-count">4/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes..." value="Snare top - SM57">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 5</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 6</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 7</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 8</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 9</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 10</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 11</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 12</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 13</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 14</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 15</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 16</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 17</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 18</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 19</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 20</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 21</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 22</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 23</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 24</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 25</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 26</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 27</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 28</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 29</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 30</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 31</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="channel-number">CH 32</td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Mix label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input label-input" maxlength="16" placeholder="Chan label..."
+                                       onkeyup="updateCharCount(this)" data-console-preview="4">
+                                <span class="char-count">0/16</span>
+                            </td>
+                            <td>
+                                <input type="text" class="track-input notes-input" placeholder="Notes...">
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Action Bar -->
+        <div class="action-bar">
+            <div class="action-bar-left">
+                <button class="btn btn-primary" onclick="saveTrackSheet()">Save Track Sheet</button>
+                <button class="btn" onclick="loadTrackSheet()">Load Track Sheet</button>
+            </div>
+            <div class="action-bar-right">
+                <button class="btn" onclick="printTrackSheet()">Print</button>
+                <button class="btn" onclick="exportCSV()">Export CSV</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Character count update
+        function updateCharCount(input) {
+            const count = input.value.length;
+            const maxLength = input.maxLength;
+            const charCountSpan = input.nextElementSibling;
+            
+            charCountSpan.textContent = `${count}/${maxLength}`;
+            
+            // Update color based on console preview limit
+            const previewLimit = parseInt(input.dataset.consolePreview);
+            if (count > previewLimit && count <= maxLength * 0.75) {
+                charCountSpan.className = 'char-count warning';
+            } else if (count > maxLength * 0.75) {
+                charCountSpan.className = 'char-count error';
+            } else {
+                charCountSpan.className = 'char-count';
+            }
+        }
+        
+        // Initialize character counts
+        document.querySelectorAll('.label-input').forEach(input => {
+            updateCharCount(input);
+        });
+        
+        // TAB navigation between fields
+        document.querySelectorAll('.track-input').forEach((input, index, inputs) => {
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Tab') {
+                    e.preventDefault();
+                    const nextIndex = (index + 1) % inputs.length;
+                    inputs[nextIndex].focus();
+                }
+                
+                // SPACE to clear (only when not typing)
+                if (e.key === ' ' && this.value === '') {
+                    e.preventDefault();
+                    this.value = '';
+                    if (this.classList.contains('label-input')) {
+                        updateCharCount(this);
+                    }
+                }
+            });
+        });
+        
+        // Quick action functions
+        function clearAllLabels() {
+            if (confirm('Clear all channel labels?')) {
+                document.querySelectorAll('.label-input').forEach(input => {
+                    input.value = '';
+                    updateCharCount(input);
+                });
+            }
+        }
+        
+        function clearAllNotes() {
+            if (confirm('Clear all notes?')) {
+                document.querySelectorAll('.notes-input').forEach(input => {
+                    input.value = '';
+                });
+            }
+        }
+        
+        function autoNumberChannels() {
+            const rows = document.querySelectorAll('.track-table tbody tr');
+            rows.forEach((row, index) => {
+                const channelNum = index + 1;
+                const mixInput = row.querySelectorAll('.label-input')[0];
+                const chanInput = row.querySelectorAll('.label-input')[1];
+                
+                mixInput.value = `CH${channelNum.toString().padStart(2, '0')}`;
+                chanInput.value = `CH${channelNum.toString().padStart(2, '0')}`;
+                
+                updateCharCount(mixInput);
+                updateCharCount(chanInput);
+            });
+        }
+        
+        function importFromClipboard() {
+            alert('Import from clipboard functionality would be implemented here.\nPaste tab-delimited data from spreadsheet.');
+        }
+        
+        function exportToClipboard() {
+            // Collect all data
+            let csvData = 'Channel,Mix Label,Chan Label,Notes\n';
+            
+            document.querySelectorAll('.track-table tbody tr').forEach((row, index) => {
+                const channelNum = index + 1;
+                const inputs = row.querySelectorAll('.track-input');
+                const mixLabel = inputs[0].value;
+                const chanLabel = inputs[1].value;
+                const notes = inputs[2].value;
+                
+                csvData += `${channelNum},"${mixLabel}","${chanLabel}","${notes}"\n`;
+            });
+            
+            // Copy to clipboard
+            navigator.clipboard.writeText(csvData).then(() => {
+                alert('Track sheet exported to clipboard!');
+            });
+        }
+        
+        function saveTrackSheet() {
+            alert('Save track sheet functionality would save to Eagle automation system.');
+        }
+        
+        function loadTrackSheet() {
+            alert('Load track sheet functionality would load from saved files.');
+        }
+        
+        function printTrackSheet() {
+            window.print();
+        }
+        
+        function exportCSV() {
+            exportToClipboard();
+        }
+    </script>
+</body>
+</html>

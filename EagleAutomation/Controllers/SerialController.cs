@@ -1,6 +1,7 @@
 using System;
 using System.IO.Ports;
 using System.Threading;
+using Serilog;
 using EagleAutomation.Models;
 
 namespace EagleAutomation.Controllers
@@ -11,6 +12,7 @@ namespace EagleAutomation.Controllers
     /// </summary>
     public class SerialController : IDisposable
     {
+        private static readonly ILogger Log = Serilog.Log.ForContext<SerialController>();
         private SerialPort? _serialPort;
         private readonly object _lock = new object();
         private bool _isConnected;
@@ -31,12 +33,31 @@ namespace EagleAutomation.Controllers
         public event EventHandler<byte[]>? DataReceived;
 
         /// <summary>
-        /// Connect to the console on specified COM port
+        /// Connect to the console using configuration settings
+        /// </summary>
+        /// <param name="config">Serial port configuration</param>
+        /// <returns>True if connection successful</returns>
+        public bool Connect(SerialPortConfig config)
+        {
+            return Connect(config.PortName, config.BaudRate, config.DataBits,
+                          config.GetParity(), config.GetStopBits(),
+                          config.ReadTimeout, config.WriteTimeout);
+        }
+
+        /// <summary>
+        /// Connect to the console on specified COM port with custom parameters
         /// </summary>
         /// <param name="portName">COM port (e.g., "COM1")</param>
         /// <param name="baudRate">Baud rate (typically 19200 for Status 18R)</param>
+        /// <param name="dataBits">Data bits (default 8)</param>
+        /// <param name="parity">Parity setting (default None)</param>
+        /// <param name="stopBits">Stop bits (default One)</param>
+        /// <param name="readTimeout">Read timeout in milliseconds (default 500)</param>
+        /// <param name="writeTimeout">Write timeout in milliseconds (default 500)</param>
         /// <returns>True if connection successful</returns>
-        public bool Connect(string portName, int baudRate = 19200)
+        public bool Connect(string portName, int baudRate = 19200, int dataBits = 8,
+                           Parity parity = Parity.None, StopBits stopBits = StopBits.One,
+                           int readTimeout = 500, int writeTimeout = 500)
         {
             lock (_lock)
             {
@@ -51,12 +72,12 @@ namespace EagleAutomation.Controllers
                     {
                         PortName = portName,
                         BaudRate = baudRate,
-                        DataBits = 8,
-                        Parity = Parity.None,
-                        StopBits = StopBits.One,
+                        DataBits = dataBits,
+                        Parity = parity,
+                        StopBits = stopBits,
                         Handshake = Handshake.None,
-                        ReadTimeout = 500,
-                        WriteTimeout = 500
+                        ReadTimeout = readTimeout,
+                        WriteTimeout = writeTimeout
                     };
 
                     // Attach data received handler
@@ -70,6 +91,9 @@ namespace EagleAutomation.Controllers
                     // For now, just verify the port opened successfully
                     _isConnected = _serialPort.IsOpen;
 
+                    Log.Information("Serial port connected: {PortName} @ {BaudRate} baud, {DataBits}-{Parity}-{StopBits}",
+                        portName, baudRate, dataBits, parity, stopBits);
+
                     // Notify connection status changed
                     ConnectionStatusChanged?.Invoke(this, _isConnected);
 
@@ -79,10 +103,9 @@ namespace EagleAutomation.Controllers
                 {
                     _isConnected = false;
                     ConnectionStatusChanged?.Invoke(this, false);
-                    
-                    // Log error (TODO: Add proper logging framework)
-                    System.Diagnostics.Debug.WriteLine($"Serial connection error: {ex.Message}");
-                    
+
+                    Log.Error(ex, "Serial connection error on {PortName}", portName);
+
                     return false;
                 }
             }
@@ -103,6 +126,7 @@ namespace EagleAutomation.Controllers
                         // TODO: Add graceful shutdown command once protocol is known
 
                         _serialPort.Close();
+                        Log.Information("Serial port disconnected: {PortName}", _serialPort.PortName);
                     }
 
                     _isConnected = false;
@@ -110,7 +134,7 @@ namespace EagleAutomation.Controllers
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error disconnecting: {ex.Message}");
+                    Log.Warning(ex, "Error during serial port disconnect");
                 }
                 finally
                 {
@@ -153,11 +177,12 @@ namespace EagleAutomation.Controllers
                 // };
 
                 byte[] command = ProtocolHandler.BuildAutomationModeCommand(mode);
+                Log.Debug("Setting automation mode: {Mode}", mode);
                 return SendCommand(command);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error setting automation mode: {ex.Message}");
+                Log.Error(ex, "Error setting automation mode: {Mode}", mode);
                 return false;
             }
         }
@@ -180,11 +205,12 @@ namespace EagleAutomation.Controllers
             {
                 // TODO: Build actual fader command from reverse engineered protocol
                 byte[] command = ProtocolHandler.BuildFaderCommand(channel, level);
+                Log.Debug("Setting fader level: CH{Channel} = {Level}", channel, level);
                 return SendCommand(command);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error setting fader level: {ex.Message}");
+                Log.Error(ex, "Error setting fader level: CH{Channel}", channel);
                 return false;
             }
         }
@@ -205,11 +231,12 @@ namespace EagleAutomation.Controllers
             {
                 // TODO: Build actual switch command from reverse engineered protocol
                 byte[] command = ProtocolHandler.BuildSwitchCommand(channel, switchType, state);
+                Log.Debug("Setting switch: CH{Channel} {SwitchType} = {State}", channel, switchType, state ? "ON" : "OFF");
                 return SendCommand(command);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error setting switch state: {ex.Message}");
+                Log.Error(ex, "Error setting switch state: CH{Channel} {SwitchType}", channel, switchType);
                 return false;
             }
         }
@@ -229,15 +256,15 @@ namespace EagleAutomation.Controllers
                         return false;
 
                     _serialPort.Write(command, 0, command.Length);
-                    
-                    // Log sent command for debugging
-                    System.Diagnostics.Debug.WriteLine($"Sent command: {BitConverter.ToString(command)}");
-                    
+
+                    // Log sent command for protocol debugging
+                    Log.Debug("TX: {Command}", BitConverter.ToString(command));
+
                     return true;
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error sending command: {ex.Message}");
+                    Log.Error(ex, "Error sending command: {Command}", BitConverter.ToString(command));
                     return false;
                 }
             }
@@ -260,8 +287,8 @@ namespace EagleAutomation.Controllers
                 byte[] buffer = new byte[bytesToRead];
                 _serialPort.Read(buffer, 0, bytesToRead);
 
-                // Log received data for debugging
-                System.Diagnostics.Debug.WriteLine($"Received data: {BitConverter.ToString(buffer)}");
+                // Log received data for protocol debugging
+                Log.Debug("RX: {Data} ({ByteCount} bytes)", BitConverter.ToString(buffer), bytesToRead);
 
                 // TODO: Parse received data according to protocol
                 // Different message types might include:
@@ -275,7 +302,7 @@ namespace EagleAutomation.Controllers
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error receiving data: {ex.Message}");
+                Log.Error(ex, "Error receiving data from serial port");
             }
         }
 

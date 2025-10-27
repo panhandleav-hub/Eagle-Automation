@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eagle Automation - Otari Status 18R (Current Build)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        /* Main container */
+        .main-window {
+            background: #252526;
+            border-radius: 16px;
+            max-width: 1600px;
+            margin: 0 auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+            border: 1px solid #3c3c3c;
+        }
+
+        /* Title bar */
+        .title-bar {
+            background: #1f1f1f;
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #3c3c3c;
+        }
+
+        .title-bar h1 {
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #00ff88;
+            font-weight: 600;
+        }
+
+        .status-led {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #00ff88;
+            box-shadow: 0 0 15px rgba(0,255,136,0.8);
+        }
+
+        /* Navigation tabs */
+        .nav-tabs {
+            background: #2d2d30;
+            padding: 15px 30px;
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid #3c3c3c;
+        }
+
+        .nav-link {
+            background: transparent;
+            border: none;
+            padding: 10px 20px;
+            color: #888;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+        }
+
+        .nav-link.active {
+            background: #0078d4;
+            color: white;
+        }
+
+        /* Time Code Display */
+        .timecode-section {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 20px;
+            padding: 25px;
+            background: #2d2d30;
+            margin: 20px;
+            border-radius: 12px;
+            border: 1px solid #3c3c3c;
+        }
+
+        .timecode-display {
+            background: #000;
+            color: #0ff;
+            font-family: 'Courier New', monospace;
+            font-size: 48px;
+            padding: 20px 40px;
+            border-radius: 8px;
+            letter-spacing: 4px;
+            box-shadow: inset 0 2px 10px rgba(0,255,255,0.3);
+            text-shadow: 0 0 20px rgba(0,255,255,0.5);
+        }
+
+        .tc-controls {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tc-label {
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        select {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            color: #888;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-window {
+            background: #000;
+            padding: 20px 30px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+            color: #00ff88;
+            text-shadow: 0 0 20px rgba(0,255,136,0.5);
+        }
+
+        /* Main content area */
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* Console Window */
+        .console-window {
+            background: #2d2d30;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #3c3c3c;
+        }
+
+        .console-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .channels-per-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Channel Strips Grid */
+        .channels-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .channel-strip {
+            background: #1e1e1e;
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border: 1px solid #3c3c3c;
+            transition: all 0.3s;
+        }
+
+        .channel-strip:hover {
+            transform: translateY(-2px);
+            border-color: #0078d4;
+            box-shadow: 0 8px 20px rgba(0,120,212,0.2);
+        }
+
+        .channel-label {
+            background: rgba(0,0,0,0.5);
+            color: #0ff;
+            text-align: center;
+            padding: 6px;
+            font-size: 11px;
+            font-family: 'Courier New', monospace;
+            border-radius: 4px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .switch-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .switch-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 6px;
+            font-size: 9px;
+            cursor: pointer;
+            color: #888;
+            border-radius: 4px;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .switch-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+
+        .switch-btn.active {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+            border-color: #ff6b6b;
+            box-shadow: 0 4px 15px rgba(255,107,107,0.4);
+        }
+
+        .switch-btn.solo.active {
+            background: linear-gradient(135deg, #ffaa00 0%, #cc8800 100%);
+            color: #000;
+            border-color: #ffaa00;
+            box-shadow: 0 4px 15px rgba(255,170,0,0.4);
+        }
+
+        .switch-btn.eq.active {
+            background: linear-gradient(135deg, #0078d4 0%, #005a9e 100%);
+            color: white;
+            border-color: #0078d4;
+            box-shadow: 0 4px 15px rgba(0,120,212,0.4);
+        }
+
+        .fader-container {
+            background: linear-gradient(180deg, #2d2d30 0%, #1a1a1a 100%);
+            border-radius: 6px;
+            height: 140px;
+            position: relative;
+            margin: 10px 5px;
+            border: 1px solid #3c3c3c;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fader {
+            width: 20px;
+            height: 100px;
+            background: linear-gradient(to top, #0078d4 75%, #333 75%);
+            border-radius: 10px;
+            border: 1px solid #555;
+            box-shadow: 0 4px 15px rgba(0,120,212,0.5);
+        }
+
+        .fader-value {
+            color: #0ff;
+            font-weight: 700;
+            font-size: 12px;
+            margin-top: 8px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .automation-indicator {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+            align-items: center;
+            margin: 8px 0;
+        }
+
+        .led {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid rgba(0,0,0,0.3);
+        }
+
+        .led.read {
+            background: #00ff88;
+            box-shadow: 0 0 15px rgba(0,255,136,0.8);
+        }
+        .led.write {
+            background: #ff3366;
+            box-shadow: 0 0 15px rgba(255,51,102,0.8);
+        }
+        .led.off {
+            background: #222;
+            box-shadow: none;
+        }
+
+        .auto-mode-text {
+            font-size: 9px;
+            color: #00ff88;
+            font-weight: 600;
+        }
+
+        .auto-btn {
+            width: 100%;
+            padding: 8px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 10px;
+            color: #888;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .auto-btn:hover {
+            background: #0078d4;
+            color: white;
+            border-color: #0078d4;
+        }
+
+        .auto-btn.active {
+            background: #0078d4;
+            color: white;
+            border-color: #0078d4;
+        }
+
+        /* Right panel - Controls */
+        .controls-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .control-section {
+            background: #2d2d30;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #3c3c3c;
+        }
+
+        .control-section-title {
+            color: #0078d4;
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            font-weight: 700;
+            border-bottom: 2px solid #0078d4;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .control-btn {
+            width: 100%;
+            padding: 12px;
+            margin: 6px 0;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            color: #888;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .control-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .control-btn.active {
+            background: #0078d4;
+            color: white;
+            border-color: #0078d4;
+        }
+
+        .transport-btn {
+            font-size: 18px;
+        }
+
+        /* Status bar */
+        .status-bar {
+            background: #1f1f1f;
+            border-top: 1px solid #3c3c3c;
+            padding: 10px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .status-info {
+            display: flex;
+            gap: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-window">
+        <!-- Title Bar -->
+        <div class="title-bar">
+            <h1>Eagle Automation - Otari Status 18R</h1>
+            <div class="connection-status">
+                <div class="status-led"></div>
+                <span>Console Connected</span>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="nav-tabs">
+            <button class="nav-link active">Console</button>
+            <button class="nav-link">Mix Edit</button>
+            <button class="nav-link">Events</button>
+            <button class="nav-link">Track Sheet</button>
+            <button class="nav-link">Preferences</button>
+        </div>
+
+        <!-- Time Code Section -->
+        <div class="timecode-section">
+            <div class="timecode-display">00:00:00:00</div>
+            <div class="tc-controls">
+                <div class="tc-label">Frame Rate</div>
+                <select>
+                    <option>24 FPS</option>
+                    <option>25 FPS</option>
+                    <option selected>29.97 DF</option>
+                    <option>30 FPS</option>
+                </select>
+            </div>
+            <div class="status-window">READY</div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content">
+            <!-- Channel Strips Area -->
+            <div class="console-window">
+                <div class="console-header">
+                    <div class="section-title">Channel Strips (32 Channels)</div>
+                    <div class="channels-per-row">
+                        <span style="font-size: 12px; color: #888;">Channels per row:</span>
+                        <select style="padding: 5px;">
+                            <option>4</option>
+                            <option>8</option>
+                            <option>16</option>
+                            <option selected>32</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="channels-grid">
+                    <!-- Channel 1 -->
+                    <div class="channel-strip">
+                        <div class="channel-label">CH 1</div>
+                        <div class="switch-buttons">
+                            <button class="switch-btn">MUTE</button>
+                            <button class="switch-btn solo">SOLO</button>
+                            <button class="switch-btn eq">EQ</button>
+                        </div>
+                        <div class="fader-container">
+                            <div class="fader"></div>
+                            <div class="fader-value">75</div>
+                        </div>
+                        <div class="automation-indicator">
+                            <div class="led read"></div>
+                            <span class="auto-mode-text">READ</span>
+                        </div>
+                        <button class="auto-btn">AUTO</button>
+                    </div>
+
+                    <!-- Channel 2 (with mute active) -->
+                    <div class="channel-strip">
+                        <div class="channel-label">CH 2</div>
+                        <div class="switch-buttons">
+                            <button class="switch-btn active">MUTE</button>
+                            <button class="switch-btn solo">SOLO</button>
+                            <button class="switch-btn eq active">EQ</button>
+                        </div>
+                        <div class="fader-container">
+                            <div class="fader" style="background: linear-gradient(to top, #0078d4 60%, #333 60%);"></div>
+                            <div class="fader-value">60</div>
+                        </div>
+                        <div class="automation-indicator">
+                            <div class="led write"></div>
+                            <span class="auto-mode-text" style="color: #ff3366;">WRITE</span>
+                        </div>
+                        <button class="auto-btn active">AUTO</button>
+                    </div>
+
+                    <!-- Channel 3 (with solo active) -->
+                    <div class="channel-strip">
+                        <div class="channel-label">CH 3</div>
+                        <div class="switch-buttons">
+                            <button class="switch-btn">MUTE</button>
+                            <button class="switch-btn solo active">SOLO</button>
+                            <button class="switch-btn eq">EQ</button>
+                        </div>
+                        <div class="fader-container">
+                            <div class="fader" style="background: linear-gradient(to top, #0078d4 85%, #333 85%);"></div>
+                            <div class="fader-value">85</div>
+                        </div>
+                        <div class="automation-indicator">
+                            <div class="led read"></div>
+                            <span class="auto-mode-text">READ</span>
+                        </div>
+                        <button class="auto-btn">AUTO</button>
+                    </div>
+
+                    <!-- Channel 4 -->
+                    <div class="channel-strip">
+                        <div class="channel-label">CH 4</div>
+                        <div class="switch-buttons">
+                            <button class="switch-btn">MUTE</button>
+                            <button class="switch-btn solo">SOLO</button>
+                            <button class="switch-btn eq">EQ</button>
+                        </div>
+                        <div class="fader-container">
+                            <div class="fader"></div>
+                            <div class="fader-value">75</div>
+                        </div>
+                        <div class="automation-indicator">
+                            <div class="led read"></div>
+                            <span class="auto-mode-text">READ</span>
+                        </div>
+                        <button class="auto-btn">AUTO</button>
+                    </div>
+
+                    <!-- Placeholder for remaining channels -->
+                    <div style="grid-column: 1 / -1; padding: 20px; color: #666; text-align: center;">
+                        ... Channels 5-32 continue in the same pattern ...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="controls-panel">
+                <!-- Mix Controls -->
+                <div class="control-section">
+                    <div class="control-section-title">Mix Controls</div>
+                    <button class="control-btn active">NEW</button>
+                    <button class="control-btn">ARCHIVE</button>
+                    <button class="control-btn">UNDO</button>
+                    <button class="control-btn">REDO</button>
+                </div>
+
+                <!-- Automation Modes -->
+                <div class="control-section">
+                    <div class="control-section-title">Automation Modes</div>
+                    <button class="control-btn">READ</button>
+                    <button class="control-btn active">WRITE</button>
+                    <button class="control-btn">UPDATE</button>
+                    <button class="control-btn">TOUCH</button>
+                    <button class="control-btn">ISOLATE</button>
+                    <button class="control-btn">GLIDE</button>
+                    <button class="control-btn" style="margin-top: 10px;">ALL READ</button>
+                </div>
+
+                <!-- Transport Controls -->
+                <div class="control-section">
+                    <div class="control-section-title">Transport</div>
+                    <button class="control-btn transport-btn">⏮</button>
+                    <button class="control-btn transport-btn active">▶</button>
+                    <button class="control-btn transport-btn">⏸</button>
+                    <button class="control-btn transport-btn">⏹</button>
+                    <button class="control-btn transport-btn">⏭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-info">
+                <span>COM Port: COM1 @ 19200 baud</span>
+                <span>●</span>
+                <span>Console: 32 Modules</span>
+                <span>Mix: Untitled_001</span>
+            </div>
+            <div>Eagle Automation v1.0.0</div>
+        </div>
+    </div>
+
+    <div style="text-align: center; padding: 20px; color: #888;">
+        <h3 style="color: #0078d4; margin-bottom: 10px;">Current WPF Build Preview</h3>
+        <p style="margin-bottom: 10px;">This matches the actual implementation with all interactive controls ready for protocol integration.</p>
+        <ul style="list-style: none; padding: 0;">
+            <li style="padding: 5px;">✓ 32 Interactive Channel Strips</li>
+            <li style="padding: 5px;">✓ Working Fader Sliders</li>
+            <li style="padding: 5px;">✓ Toggle Buttons (Mute/Solo/EQ/Auto)</li>
+            <li style="padding: 5px;">✓ Color-Coded Automation Indicators</li>
+            <li style="padding: 5px;">✓ Global Automation Mode Controls</li>
+            <li style="padding: 5px;">✓ Serilog Structured Logging</li>
+            <li style="padding: 5px;">✓ Configuration File Support</li>
+            <li style="padding: 5px;">⏳ Protocol Implementation (Tomorrow!)</li>
+        </ul>
+    </div>
+</body>
+</html>

@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eagle Automation - Otari Status 18R</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        /* Main container */
+        .main-window {
+            background: #252526;
+            border-radius: 16px;
+            max-width: 1600px;
+            margin: 0 auto 30px auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+            border: 1px solid #3c3c3c;
+        }
+        
+        /* Title bar */
+        .title-bar {
+            background: #1f1f1f;
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #3c3c3c;
+        }
+        
+        .title-bar h1 {
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .title-bar .controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .title-bar button {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 18px;
+        }
+        
+        .title-bar button:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+        
+        /* Navigation tabs */
+        .nav-tabs {
+            background: #2d2d30;
+            padding: 15px 30px;
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid #3c3c3c;
+        }
+        
+        .nav-link {
+            background: transparent;
+            border: none;
+            padding: 10px 20px;
+            color: #888;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .nav-link:hover {
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+        }
+        
+        .nav-link.active {
+            background: #0078d4;
+            color: white;
+        }
+        
+        /* Main content area */
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            grid-template-rows: auto 1fr auto;
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        /* Time Code Display */
+        .timecode-section {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 20px;
+            padding: 25px;
+            background: #2d2d30;
+            border-radius: 12px;
+            border: 1px solid #3c3c3c;
+        }
+        
+        .timecode-display {
+            background: #000;
+            color: #0ff;
+            font-family: 'Courier New', monospace;
+            font-size: 48px;
+            padding: 20px 40px;
+            border-radius: 8px;
+            letter-spacing: 4px;
+            box-shadow: inset 0 2px 10px rgba(0,255,255,0.3);
+            text-shadow: 0 0 20px rgba(0,255,255,0.5);
+        }
+        
+        .tc-label {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .tc-controls {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .tc-btn {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            color: #888;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .tc-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border-color: rgba(255,255,255,0.2);
+        }
+        
+        .tc-btn.active {
+            background: #0078d4;
+            border-color: #0078d4;
+            color: white;
+        }
+        
+        .status-window {
+            background: #000;
+            padding: 20px 30px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
+        }
+        
+        .status-ready { 
+            color: #00ff88;
+            text-shadow: 0 0 20px rgba(0,255,136,0.5);
+        }
+        .status-record { 
+            color: #ff3366;
+            text-shadow: 0 0 20px rgba(255,51,102,0.5);
+        }
+        .status-audition { 
+            color: #ffaa00;
+            text-shadow: 0 0 20px rgba(255,170,0,0.5);
+        }
+        
+        /* Console Window */
+        .console-window {
+            background: #2d2d30;
+            border-radius: 12px;
+            padding: 20px;
+            overflow-y: auto;
+            max-height: 700px;
+            border: 1px solid #3c3c3c;
+        }
+        
+        .console-header {
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        
+        /* Collapsible Channel Groups */
+        .channel-group {
+            margin-bottom: 15px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid #3c3c3c;
+            transition: all 0.3s;
+        }
+        
+        .channel-group:hover {
+            border-color: #0078d4;
+        }
+        
+        .group-header {
+            background: #1f1f1f;
+            color: #fff;
+            padding: 15px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            user-select: none;
+            transition: all 0.3s;
+        }
+        
+        .group-header:hover {
+            background: #2a2a2a;
+        }
+        
+        .group-header .toggle {
+            font-size: 18px;
+            transition: transform 0.3s;
+        }
+        
+        .group-header.collapsed .toggle {
+            transform: rotate(-90deg);
+        }
+        
+        .group-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            gap: 10px;
+            padding: 20px;
+            background: rgba(0,0,0,0.2);
+            max-height: 400px;
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
+        
+        .group-content.collapsed {
+            max-height: 0;
+            padding: 0 20px;
+        }
+        
+        .channel-strip {
+            background: #1e1e1e;
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border: 1px solid #3c3c3c;
+            transition: all 0.3s;
+        }
+        
+        .channel-strip:hover {
+            transform: translateY(-2px);
+            border-color: #0078d4;
+            box-shadow: 0 8px 20px rgba(0,120,212,0.2);
+        }
+        
+        .channel-label {
+            background: rgba(0,0,0,0.5);
+            color: #0ff;
+            text-align: center;
+            padding: 6px;
+            font-size: 11px;
+            font-family: 'Courier New', monospace;
+            border-radius: 4px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        
+        .fader-container {
+            background: linear-gradient(180deg, #2d2d30 0%, #1a1a1a 100%);
+            border-radius: 6px;
+            height: 140px;
+            position: relative;
+            margin: 10px 15px;
+            border: 1px solid #3c3c3c;
+        }
+        
+        .fader {
+            width: 100%;
+            height: 18px;
+            background: #0078d4;
+            border-radius: 4px;
+            position: absolute;
+            left: 0;
+            cursor: ns-resize;
+            box-shadow: 0 4px 15px rgba(0,120,212,0.5);
+            transition: box-shadow 0.3s;
+        }
+        
+        .fader:hover {
+            box-shadow: 0 6px 20px rgba(0,120,212,0.8);
+        }
+        
+        .fader-scale {
+            position: absolute;
+            right: -30px;
+            top: 0;
+            height: 100%;
+            font-size: 9px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            color: #666;
+        }
+        
+        .automation-indicator {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+            margin-top: 8px;
+        }
+        
+        .led {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid rgba(0,0,0,0.3);
+            transition: all 0.3s;
+        }
+        
+        .led.write { 
+            background: #ff3366;
+            box-shadow: 0 0 15px rgba(255,51,102,0.8);
+        }
+        .led.update { 
+            background: #ffaa00;
+            box-shadow: 0 0 15px rgba(255,170,0,0.8);
+        }
+        .led.read { 
+            background: #00ff88;
+            box-shadow: 0 0 15px rgba(0,255,136,0.8);
+        }
+        .led.isolate { 
+            background: #667eea;
+            box-shadow: 0 0 15px rgba(102,126,234,0.8);
+        }
+        .led.off { 
+            background: #222;
+            box-shadow: none;
+        }
+        
+        .switch-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .switch-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 6px;
+            font-size: 9px;
+            cursor: pointer;
+            color: #888;
+            border-radius: 4px;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        
+        .switch-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+        
+        .switch-btn.active {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            color: white;
+            border-color: #ff6b6b;
+            box-shadow: 0 4px 15px rgba(255,107,107,0.4);
+        }
+        
+        .auto-btn {
+            width: 100%;
+            padding: 8px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 10px;
+            color: #888;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        
+        .auto-btn:hover {
+            background: #0078d4;
+            color: white;
+            border-color: #0078d4;
+        }
+        
+        /* Right panel - Controls */
+        .controls-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+            max-height: 700px;
+        }
+        
+        .control-section {
+            background: #2d2d30;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #3c3c3c;
+        }
+        
+        .section-title {
+            color: #0078d4;
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            font-weight: 700;
+            border-bottom: 2px solid #0078d4;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .control-btn {
+            width: 100%;
+            padding: 12px;
+            margin: 6px 0;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            color: #888;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .control-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        
+        .control-btn.active {
+            background: #0078d4;
+            color: white;
+            border-color: #0078d4;
+        }
+        
+        /* Record Controls */
+        .record-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        
+        .rec-btn {
+            padding: 15px;
+            border: 2px solid;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 14px;
+            border-radius: 10px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .rec-btn.record {
+            background: linear-gradient(135deg, #ff3366 0%, #cc0033 100%);
+            color: white;
+            border-color: #ff3366;
+        }
+        
+        .rec-btn.record:hover {
+            box-shadow: 0 8px 25px rgba(255,51,102,0.5);
+            transform: translateY(-2px);
+        }
+        
+        .rec-btn.play {
+            background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+            color: #000;
+            border-color: #00ff88;
+        }
+        
+        .rec-btn.play:hover {
+            box-shadow: 0 8px 25px rgba(0,255,136,0.5);
+            transform: translateY(-2px);
+        }
+        
+        .rec-btn.safe {
+            background: linear-gradient(135deg, #ffaa00 0%, #cc8800 100%);
+            color: #000;
+            border-color: #ffaa00;
+        }
+        
+        .rec-btn.safe:hover {
+            box-shadow: 0 8px 25px rgba(255,170,0,0.5);
+            transform: translateY(-2px);
+        }
+        
+        /* Timeline */
+        .timeline-section {
+            grid-column: 1 / -1;
+            background: #2d2d30;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #3c3c3c;
+        }
+        
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .timeline-header h3 {
+            font-size: 14px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+        
+        .timeline {
+            background: #1e1e1e;
+            height: 100px;
+            border-radius: 8px;
+            position: relative;
+            overflow-x: auto;
+            border: 1px solid #3c3c3c;
+        }
+        
+        .timeline-cursor {
+            position: absolute;
+            width: 3px;
+            height: 100%;
+            background: #ff3366;
+            left: 50%;
+            box-shadow: 0 0 10px rgba(255,51,102,0.8);
+        }
+        
+        .timeline-event {
+            position: absolute;
+            height: 25px;
+            background: #0078d4;
+            border-radius: 4px;
+            top: 10px;
+            font-size: 11px;
+            padding: 5px 10px;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,120,212,0.4);
+        }
+        
+        /* Info Bar */
+        .info-bar {
+            background: #2d2d30;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            border-top: 1px solid #3c3c3c;
+            border-radius: 0 0 16px 16px;
+        }
+        
+        .info-item {
+            padding: 0 15px;
+            border-right: 1px solid #3c3c3c;
+            color: #888;
+        }
+        
+        .info-item:last-child {
+            border-right: none;
+        }
+        
+        .info-item strong {
+            color: #0078d4;
+            margin-right: 5px;
+        }
+        
+        /* Mix Controls */
+        .mix-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        
+        /* Console Controls */
+        .console-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .control-group {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .small-btn {
+            flex: 1;
+            padding: 10px 8px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #3c3c3c;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            color: #888;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        
+        .small-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border-color: #0078d4;
+        }
+        
+        .master-fader {
+            background: linear-gradient(180deg, #2d2d30 0%, #1a1a1a 100%);
+            border-radius: 8px;
+            height: 120px;
+            position: relative;
+            margin: 15px 0;
+            border: 1px solid #3c3c3c;
+        }
+        
+        .master-fader-knob {
+            width: 100%;
+            height: 30px;
+            background: #0078d4;
+            border-radius: 6px;
+            position: absolute;
+            cursor: ns-resize;
+            box-shadow: 0 6px 20px rgba(0,120,212,0.6);
+            transition: box-shadow 0.3s;
+        }
+        
+        .master-fader-knob:hover {
+            box-shadow: 0 8px 25px rgba(0,120,212,0.8);
+        }
+        
+        /* Automation Options */
+        .automation-modes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        
+        .mode-btn {
+            padding: 12px;
+            background: rgba(255,255,255,0.05);
+            color: #888;
+            border: 1px solid #3c3c3c;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            text-align: center;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        
+        .mode-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border-color: #0078d4;
+        }
+        
+        .mode-btn.active {
+            background: linear-gradient(135deg, #00ff88 0%, #00cc66 100%);
+            color: #000;
+            border-color: #00ff88;
+            box-shadow: 0 4px 15px rgba(0,255,136,0.4);
+        }
+        
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: rgba(102,126,234,0.5);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(102,126,234,0.8);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-window">
+        <!-- Title Bar -->
+        <div class="title-bar">
+            <h1>🎛️ Eagle Automation - Status 18R</h1>
+            <div class="controls">
+                <button title="Minimize">−</button>
+                <button title="Maximize">□</button>
+                <button title="Close">×</button>
+            </div>
+        </div>
+        
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <a href="eagle_automation_modern_clean.html" class="nav-link active">Console</a>
+            <a href="mix_edit_page.html" class="nav-link">Mix Edit</a>
+            <a href="events_page.html" class="nav-link">Events</a>
+            <a href="track_sheet_page.html" class="nav-link">Track Sheet</a>
+            <a href="preferences_page.html" class="nav-link">Preferences</a>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="content">
+            <!-- Timecode Section -->
+            <div class="timecode-section">
+                <div>
+                    <div class="tc-label">Time Code Reader</div>
+                    <div class="timecode-display">00:00:00:00</div>
+                    <div style="margin-top: 10px;">
+                        <div class="tc-controls">
+                            <button class="tc-btn active">LTC</button>
+                            <button class="tc-btn">VITC</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="tc-label">Frame Rate (SMPTE)</div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;">
+                        <button class="tc-btn">23.976</button>
+                        <button class="tc-btn">24</button>
+                        <button class="tc-btn">25</button>
+                        <button class="tc-btn">29.97 DF</button>
+                        <button class="tc-btn">29.97 NDF</button>
+                        <button class="tc-btn active">30</button>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <div class="tc-controls">
+                            <button class="tc-btn">TC GEN</button>
+                            <button class="tc-btn">OFFSET</button>
+                            <button class="tc-btn">DIAG</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="tc-label">System Status</div>
+                    <div class="status-window">
+                        <span class="status-ready">● READY</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Console Window -->
+            <div class="console-window">
+                <div class="console-header">Console Surface - 32 Channels</div>
+                
+                <!-- Channel Group 1 -->
+                <div class="channel-group">
+                    <div class="group-header" onclick="toggleGroup(this)">
+                        <span>CHANNELS 1-12</span>
+                        <span class="toggle">▼</span>
+                    </div>
+                    <div class="group-content">
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 1</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn active">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 70%;"></div>
+                                <div class="fader-scale">
+                                    <span>+10</span>
+                                    <span>0</span>
+                                    <span>-10</span>
+                                    <span>-20</span>
+                                    <span>-∞</span>
+                                </div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led write"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 2</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn active">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 50%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led off"></div>
+                                <div class="led update"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 3</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 80%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led read"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 4</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 60%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led read"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 5</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn active">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 45%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led read"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 6</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 55%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led off"></div>
+                                <div class="led update"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 7</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 40%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led read"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 8</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn active">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 65%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led write"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 9</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 50%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led read"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 10</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn active">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 58%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led off"></div>
+                                <div class="led update"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 11</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 48%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led read"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 12</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 52%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led read"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Channel Group 2 -->
+                <div class="channel-group">
+                    <div class="group-header" onclick="toggleGroup(this)">
+                        <span>CHANNELS 13-24</span>
+                        <span class="toggle">▼</span>
+                    </div>
+                    <div class="group-content">
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 13</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 62%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led off"></div>
+                                <div class="led update"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 14</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 44%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led read"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 15</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn active">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 68%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led write"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 16</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 51%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led read"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 17</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 56%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led read"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 18</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn active">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 47%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led off"></div>
+                                <div class="led update"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 19</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 53%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led read"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 20</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 49%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led read"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 21</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn active">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 72%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led write"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 22</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 54%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led read"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 23</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 46%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led read"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 24</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn active">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 59%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led off"></div>
+                                <div class="led update"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Channel Group 3 -->
+                <div class="channel-group">
+                    <div class="group-header" onclick="toggleGroup(this)">
+                        <span>CHANNELS 25-32</span>
+                        <span class="toggle">▼</span>
+                    </div>
+                    <div class="group-content">
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 25</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 50%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led read"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 26</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 52%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led read"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 27</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 48%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led read"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 28</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 51%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led read"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 29</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 49%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led read"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 30</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 53%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led read"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 31</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 50%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led read"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                        
+                        <div class="channel-strip">
+                            <div class="channel-label">CH 32</div>
+                            <div class="switch-buttons">
+                                <button class="switch-btn">MUTE</button>
+                                <button class="switch-btn">SOLO</button>
+                                <button class="switch-btn">EQ</button>
+                            </div>
+                            <div class="fader-container">
+                                <div class="fader" style="bottom: 50%;"></div>
+                            </div>
+                            <div class="automation-indicator">
+                                <div class="led read"></div>
+                                <div class="led off"></div>
+                            </div>
+                            <button class="auto-btn">AUTO</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Panel - Control Sections -->
+            <div class="controls-panel">
+                <!-- Mix Controls -->
+                <div class="control-section">
+                    <div class="section-title">Mix Controls</div>
+                    <div class="mix-controls">
+                        <button class="control-btn">NEW</button>
+                        <button class="control-btn">ARCH</button>
+                        <button class="control-btn">UNDO</button>
+                        <button class="control-btn">REDO</button>
+                    </div>
+                </div>
+                
+                <!-- Record Controls -->
+                <div class="control-section">
+                    <div class="section-title">Record Controls</div>
+                    <div class="record-controls">
+                        <button class="rec-btn record">REC</button>
+                        <button class="rec-btn play">PLAY</button>
+                        <button class="rec-btn safe">SAFE</button>
+                    </div>
+                </div>
+                
+                <!-- Console Controls -->
+                <div class="control-section">
+                    <div class="section-title">Console Controls</div>
+                    <div class="console-controls">
+                        <div style="font-size: 10px; color: #888; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px;">Selection</div>
+                        <div class="control-group">
+                            <button class="small-btn">CLR</button>
+                            <button class="small-btn">ALL</button>
+                            <button class="small-btn">INV</button>
+                        </div>
+                        <div style="font-size: 10px; color: #888; margin: 10px 0 6px; text-transform: uppercase; letter-spacing: 1px;">Switches</div>
+                        <div class="control-group">
+                            <button class="small-btn">ON</button>
+                            <button class="small-btn">OFF</button>
+                            <button class="small-btn">TOG</button>
+                        </div>
+                        <div style="font-size: 10px; color: #888; margin: 10px 0 6px; text-transform: uppercase; letter-spacing: 1px;">Master Fader</div>
+                        <div class="master-fader">
+                            <div class="master-fader-knob" style="bottom: 50%;"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Automation Modes -->
+                <div class="control-section">
+                    <div class="section-title">Automation Modes</div>
+                    <div class="automation-modes">
+                        <button class="mode-btn">READ</button>
+                        <button class="mode-btn active">WRITE</button>
+                        <button class="mode-btn">UPDATE</button>
+                        <button class="mode-btn">TOUCH</button>
+                        <button class="mode-btn">ISOLATE</button>
+                        <button class="mode-btn">GLIDE</button>
+                    </div>
+                    <button class="control-btn" style="margin-top: 10px;">ALL READ</button>
+                </div>
+                
+                <!-- Switch Automation -->
+                <div class="control-section">
+                    <div class="section-title">Switch Automation</div>
+                    <button class="control-btn">TOGGLE</button>
+                    <button class="control-btn">MATCH</button>
+                    <button class="control-btn">LEAVE</button>
+                    <button class="control-btn">ISOLATE</button>
+                </div>
+            </div>
+            
+            <!-- Timeline Section -->
+            <div class="timeline-section">
+                <div class="timeline-header">
+                    <h3>Timeline & Events</h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="small-btn">Zoom +</button>
+                        <button class="small-btn">Zoom −</button>
+                        <button class="small-btn">Fit</button>
+                    </div>
+                </div>
+                <div class="timeline">
+                    <div class="timeline-cursor"></div>
+                    <div class="timeline-event" style="left: 20%; width: 15%;">Event 1</div>
+                    <div class="timeline-event" style="left: 50%; width: 20%; top: 40px;">Event 2</div>
+                    <div class="timeline-event" style="left: 75%; width: 10%; top: 70px;">Cue</div>
+                </div>
+                <div style="margin-top: 15px; display: flex; gap: 8px;">
+                    <button class="small-btn">New Event</button>
+                    <button class="small-btn">Delete</button>
+                    <button class="small-btn">Duplicate</button>
+                    <button class="small-btn">Move</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Info Bar -->
+        <div class="info-bar">
+            <div class="info-item"><strong>COM Port:</strong> COM1 @ 16550AF UART</div>
+            <div class="info-item"><strong>Rate:</strong> 30 FPS (SMPTE)</div>
+            <div class="info-item"><strong>Memory:</strong> 12.5 MB / 16 MB</div>
+            <div class="info-item"><strong>Disk:</strong> 245 MB Free</div>
+            <div class="info-item"><strong>Console:</strong> 32 Modules</div>
+            <div class="info-item"><strong>Mix:</strong> Untitled_001</div>
+        </div>
+    </div>
+    
+    <script>
+        function toggleGroup(header) {
+            const content = header.nextElementSibling;
+            
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+                header.classList.remove('collapsed');
+            } else {
+                content.classList.add('collapsed');
+                header.classList.add('collapsed');
+            }
+        }
+    </script>
+</body>
+</html>

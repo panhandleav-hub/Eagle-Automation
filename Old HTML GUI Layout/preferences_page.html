@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preferences - Eagle Automation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        /* Main container */
+        .main-window {
+            background: #252526;
+            border-radius: 16px;
+            max-width: 1400px;
+            margin: 0 auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+            border: 1px solid #3c3c3c;
+        }
+        
+        /* Title bar */
+        .title-bar {
+            background: #1f1f1f;
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #3c3c3c;
+        }
+        
+        .title-bar h1 {
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .title-bar .controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .title-bar button {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 18px;
+        }
+        
+        .title-bar button:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+        
+        /* Page navigation (between Console, Mix Edit, Events, etc.) */
+        .page-navigation {
+            background: #2d2d30;
+            padding: 15px 30px;
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid #3c3c3c;
+        }
+        
+        .page-nav-link {
+            background: transparent;
+            border: none;
+            padding: 10px 20px;
+            color: #888;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .page-nav-link:hover {
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+        }
+        
+        .page-nav-link.active {
+            background: #0078d4;
+            color: white;
+        }
+        
+        /* Tab navigation */
+        .tab-navigation {
+            background: #2d2d30;
+            padding: 15px 30px;
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid #3c3c3c;
+        }
+        
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 12px 24px;
+            color: #888;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .tab-btn:hover {
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+        }
+        
+        .tab-btn.active {
+            background: #0078d4;
+            color: white;
+        }
+        
+        /* Main content area */
+        .content {
+            padding: 30px;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Common section styling */
+        .pref-section {
+            background: #2d2d30;
+            border: 1px solid #3c3c3c;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        
+        .pref-section h3 {
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #3c3c3c;
+        }
+        
+        /* Form styling */
+        .form-row {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            color: #ccc;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .form-input {
+            background: #1f1f1f;
+            border: 1px solid #3c3c3c;
+            border-radius: 6px;
+            padding: 10px 15px;
+            color: #e0e0e0;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #0078d4;
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.1);
+        }
+        
+        .form-input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        select.form-input {
+            cursor: pointer;
+        }
+        
+        /* Info display (read-only fields) */
+        .info-display {
+            background: #1f1f1f;
+            border: 1px solid #3c3c3c;
+            border-radius: 6px;
+            padding: 10px 15px;
+            color: #888;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        /* Warning banner */
+        .warning-banner {
+            background: rgba(255,170,0,0.1);
+            border: 1px solid rgba(255,170,0,0.3);
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .warning-icon {
+            color: #ffaa00;
+            font-size: 24px;
+        }
+        
+        .warning-text {
+            color: #ffaa00;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        /* Button styling */
+        .btn {
+            background: #0078d4;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .btn:hover {
+            background: #0086f0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,120,212,0.3);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: rgba(255,255,255,0.05);
+            color: #e0e0e0;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .btn-danger {
+            background: rgba(255,51,102,0.2);
+            color: #ff3366;
+        }
+        
+        .btn-danger:hover {
+            background: rgba(255,51,102,0.3);
+            box-shadow: 0 4px 12px rgba(255,51,102,0.2);
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px solid #3c3c3c;
+        }
+        
+        /* Checkbox styling */
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #0078d4;
+        }
+        
+        /* Radio button styling */
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .radio {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #0078d4;
+        }
+        
+        /* File path browser */
+        .file-path-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .file-path-row .form-input {
+            flex: 1;
+        }
+        
+        .browse-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #3c3c3c;
+            border-radius: 6px;
+            padding: 10px 20px;
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            white-space: nowrap;
+        }
+        
+        .browse-btn:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: #555;
+        }
+        
+        /* Status indicator */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        
+        .status-indicator.connected {
+            background: rgba(0,255,136,0.1);
+            color: #00ff88;
+            border: 1px solid rgba(0,255,136,0.2);
+        }
+        
+        .status-indicator.disconnected {
+            background: rgba(255,51,102,0.1);
+            color: #ff3366;
+            border: 1px solid rgba(255,51,102,0.2);
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        
+        /* Two column layout for certain sections */
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        /* Description text */
+        .description {
+            color: #888;
+            font-size: 13px;
+            line-height: 1.6;
+            margin-top: 8px;
+        }
+        
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: #3c3c3c;
+            margin: 25px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-window">
+        <!-- Title Bar -->
+        <div class="title-bar">
+            <h1>Eagle Automation - Preferences</h1>
+            <div class="controls">
+                <button title="Minimize">−</button>
+                <button title="Maximize">□</button>
+                <button title="Close">×</button>
+            </div>
+        </div>
+        
+        <!-- Page Navigation -->
+        <div class="page-navigation">
+            <a href="eagle_automation_modern_clean.html" class="page-nav-link">Console</a>
+            <a href="mix_edit_page.html" class="page-nav-link">Mix Edit</a>
+            <a href="events_page.html" class="page-nav-link">Events</a>
+            <a href="track_sheet_page.html" class="page-nav-link">Track Sheet</a>
+            <a href="preferences_page.html" class="page-nav-link active">Preferences</a>
+        </div>
+        
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-btn active" onclick="switchTab('info')">Info</button>
+            <button class="tab-btn" onclick="switchTab('settings')">Settings</button>
+            <button class="tab-btn" onclick="switchTab('timecode')">Time Code</button>
+            <button class="tab-btn" onclick="switchTab('paths')">File Paths</button>
+        </div>
+        
+        <!-- Content Area -->
+        <div class="content">
+            
+            <!-- INFO TAB -->
+            <div id="info" class="tab-content active">
+                <div class="pref-section">
+                    <h3>Console Information</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Console Model:</div>
+                        <div class="info-display">Otari Status 18R</div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Serial Number:</div>
+                        <div class="info-display">18R-0042</div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Module Count:</div>
+                        <div class="info-display">32 Channels</div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">VCA Groups:</div>
+                        <div class="info-display">8 Groups Available</div>
+                    </div>
+                    
+                    <div class="divider"></div>
+                    
+                    <h3 style="margin-top: 25px;">Software Information</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Eagle Automation Version:</div>
+                        <div class="info-display">v3.2.1 (Rebuilt Modern)</div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Build Date:</div>
+                        <div class="info-display">October 26, 2025</div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Protocol Version:</div>
+                        <div class="info-display">Status 18R RS-232 (Reverse Engineered)</div>
+                    </div>
+                    
+                    <div class="divider"></div>
+                    
+                    <h3 style="margin-top: 25px;">Hardware Configuration</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-label">UART Chip:</div>
+                        <div class="info-display">16550AF Compatible</div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Option Cards:</div>
+                        <div>
+                            <div class="info-display" style="margin-bottom: 8px;">• Dynamics Module (Installed)</div>
+                            <div class="info-display" style="margin-bottom: 8px;">• Master Section (Installed)</div>
+                            <div class="info-display">• Auxiliary I/O (Installed)</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Floppy Drive:</div>
+                        <div class="info-display">3.5" HD Drive Present</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SETTINGS TAB -->
+            <div id="settings" class="tab-content">
+                <div class="warning-banner">
+                    <div class="warning-icon">⚠</div>
+                    <div class="warning-text">
+                        <strong>Important:</strong> Changing communication settings requires restarting the application. 
+                        Incorrect settings may prevent communication with the console.
+                    </div>
+                </div>
+                
+                <div class="pref-section">
+                    <h3>Console Communication</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-label">COM Port:</div>
+                        <div>
+                            <select class="form-input">
+                                <option value="COM1" selected>COM1</option>
+                                <option value="COM2">COM2</option>
+                                <option value="COM3">COM3</option>
+                                <option value="COM4">COM4</option>
+                                <option value="COM5">COM5</option>
+                                <option value="COM6">COM6</option>
+                            </select>
+                            <div class="description">
+                                Serial port connected to the "AUTOMATION PC" port on the Status 18R rear panel.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Connection Status:</div>
+                        <div class="status-indicator connected">
+                            <div class="status-dot"></div>
+                            <span>Connected - Console Responding</span>
+                        </div>
+                    </div>
+                    
+                    <div class="divider"></div>
+                    
+                    <h3 style="margin-top: 25px;">Communication Parameters</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Baud Rate:</div>
+                        <div>
+                            <select class="form-input">
+                                <option value="9600">9600</option>
+                                <option value="19200" selected>19200</option>
+                                <option value="38400">38400</option>
+                                <option value="57600">57600</option>
+                                <option value="115200">115200</option>
+                            </select>
+                            <div class="description">
+                                Communication speed. Determined during reverse engineering. Do not change unless specified.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Data Bits:</div>
+                        <div>
+                            <select class="form-input">
+                                <option value="7">7 Bits</option>
+                                <option value="8" selected>8 Bits</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Parity:</div>
+                        <div>
+                            <select class="form-input">
+                                <option value="none" selected>None</option>
+                                <option value="odd">Odd</option>
+                                <option value="even">Even</option>
+                                <option value="mark">Mark</option>
+                                <option value="space">Space</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Stop Bits:</div>
+                        <div>
+                            <select class="form-input">
+                                <option value="1" selected>1 Bit</option>
+                                <option value="1.5">1.5 Bits</option>
+                                <option value="2">2 Bits</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Flow Control:</div>
+                        <div>
+                            <select class="form-input">
+                                <option value="none" selected>None</option>
+                                <option value="xon-xoff">XON/XOFF</option>
+                                <option value="rts-cts">RTS/CTS</option>
+                                <option value="dsr-dtr">DSR/DTR</option>
+                            </select>
+                            <div class="description">
+                                Hardware or software flow control. Leave as "None" unless experiencing data loss.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="divider"></div>
+                    
+                    <h3 style="margin-top: 25px;">Advanced Settings</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Read Timeout (ms):</div>
+                        <input type="number" class="form-input" value="500" min="100" max="5000" step="100">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Write Timeout (ms):</div>
+                        <input type="number" class="form-input" value="500" min="100" max="5000" step="100">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Enable Debug Logging:</div>
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" class="checkbox" id="debug-log">
+                            <label for="debug-log">Log all serial communications to file</label>
+                        </div>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button class="btn">Test Connection</button>
+                        <button class="btn btn-secondary">Reset to Defaults</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- TIME CODE TAB -->
+            <div id="timecode" class="tab-content">
+                <div class="pref-section">
+                    <h3>Time Code Source</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Input Source:</div>
+                        <div class="radio-group">
+                            <div class="radio-option">
+                                <input type="radio" class="radio" name="tc-source" id="tc-ltc" checked>
+                                <label for="tc-ltc">LTC (Longitudinal Time Code) - Recommended for audio post</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" class="radio" name="tc-source" id="tc-vitc">
+                                <label for="tc-vitc">VITC (Vertical Interval Time Code) - Requires video input</label>
+                            </div>
+                            <div class="radio-option">
+                                <input type="radio" class="radio" name="tc-source" id="tc-internal">
+                                <label for="tc-internal">Internal Generator (TCGEN)</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="divider"></div>
+                    
+                    <h3 style="margin-top: 25px;">Frame Rate</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-label">SMPTE Frame Rate:</div>
+                        <div>
+                            <select class="form-input">
+                                <option value="24">24 FPS (Film Standard)</option>
+                                <option value="25">25 FPS (PAL Video)</option>
+                                <option value="2997df" selected>29.97 DF (NTSC Drop Frame)</option>
+                                <option value="2997ndf">29.97 NDF (NTSC Non-Drop Frame)</option>
+                                <option value="30">30 FPS (NTSC High Speed)</option>
+                            </select>
+                            <div class="description">
+                                Must match the time code source. Drop Frame compensates for NTSC's 29.97 frame rate.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="divider"></div>
+                    
+                    <h3 style="margin-top: 25px;">Time Code Generator (TCGEN)</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Generator Enabled:</div>
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" class="checkbox" id="tcgen-enable">
+                            <label for="tcgen-enable">Enable internal time code generator</label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Start Time:</div>
+                        <input type="text" class="form-input" value="00:00:00:00" placeholder="HH:MM:SS:FF">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">End Time (Loop):</div>
+                        <input type="text" class="form-input" value="01:00:00:00" placeholder="HH:MM:SS:FF">
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Loop Enabled:</div>
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" class="checkbox" id="tcgen-loop">
+                            <label for="tcgen-loop">Loop from start to end time</label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">User Bits:</div>
+                        <input type="text" class="form-input" value="00000000" placeholder="8 hex digits" maxlength="8">
+                    </div>
+                    
+                    <div class="divider"></div>
+                    
+                    <h3 style="margin-top: 25px;">Diagnostics</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-label">TC Signal Strength:</div>
+                        <div class="info-display">95% (Excellent)</div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Frame Count Errors:</div>
+                        <div class="info-display">0 errors in last 1000 frames</div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Lock Status:</div>
+                        <div class="status-indicator connected">
+                            <div class="status-dot"></div>
+                            <span>Locked - Stable Sync</span>
+                        </div>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button class="btn">Reset Generator</button>
+                        <button class="btn btn-secondary">Calibrate Input</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- FILE PATHS TAB -->
+            <div id="paths" class="tab-content">
+                <div class="pref-section">
+                    <h3>Default Directories</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Mix Files:</div>
+                        <div class="file-path-row">
+                            <input type="text" class="form-input" value="C:\Eagle\Mixes">
+                            <button class="browse-btn">Browse...</button>
+                        </div>
+                    </div>
+                    
+                    <div class="description" style="margin-left: 220px; margin-top: -10px; margin-bottom: 20px;">
+                        Default location for saving and loading automation mix files (.mix format).
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Preset Files:</div>
+                        <div class="file-path-row">
+                            <input type="text" class="form-input" value="C:\Eagle\Presets">
+                            <button class="browse-btn">Browse...</button>
+                        </div>
+                    </div>
+                    
+                    <div class="description" style="margin-left: 220px; margin-top: -10px; margin-bottom: 20px;">
+                        Dynamics presets and EQ settings storage location.
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Export Directory:</div>
+                        <div class="file-path-row">
+                            <input type="text" class="form-input" value="C:\Eagle\Export">
+                            <button class="browse-btn">Browse...</button>
+                        </div>
+                    </div>
+                    
+                    <div class="description" style="margin-left: 220px; margin-top: -10px; margin-bottom: 20px;">
+                        Location for exported automation data and reports.
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Backup Directory:</div>
+                        <div class="file-path-row">
+                            <input type="text" class="form-input" value="C:\Eagle\Backups">
+                            <button class="browse-btn">Browse...</button>
+                        </div>
+                    </div>
+                    
+                    <div class="description" style="margin-left: 220px; margin-top: -10px; margin-bottom: 20px;">
+                        Automatic backup location for mix files.
+                    </div>
+                    
+                    <div class="divider"></div>
+                    
+                    <h3 style="margin-top: 25px;">Legacy File Support</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Diskmix Directory:</div>
+                        <div class="file-path-row">
+                            <input type="text" class="form-input" value="C:\Data-dm">
+                            <button class="browse-btn">Browse...</button>
+                        </div>
+                    </div>
+                    
+                    <div class="description" style="margin-left: 220px; margin-top: -10px; margin-bottom: 20px;">
+                        Location of legacy Diskmix automation files. Eagle can open and convert these to modern format.
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Auto-Convert Legacy Files:</div>
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" class="checkbox" id="auto-convert" checked>
+                            <label for="auto-convert">Automatically convert Diskmix files when opened</label>
+                        </div>
+                    </div>
+                    
+                    <div class="divider"></div>
+                    
+                    <h3 style="margin-top: 25px;">Auto-Save Settings</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Enable Auto-Save:</div>
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" class="checkbox" id="auto-save" checked>
+                            <label for="auto-save">Automatically save mix changes</label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Auto-Save Interval:</div>
+                        <div>
+                            <select class="form-input">
+                                <option value="1">Every 1 minute</option>
+                                <option value="2">Every 2 minutes</option>
+                                <option value="5" selected>Every 5 minutes</option>
+                                <option value="10">Every 10 minutes</option>
+                                <option value="15">Every 15 minutes</option>
+                                <option value="30">Every 30 minutes</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Maximum Auto-Save Files:</div>
+                        <div>
+                            <input type="number" class="form-input" value="10" min="1" max="50">
+                            <div class="description">
+                                Number of auto-save versions to keep. Older files are automatically deleted.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-label">Backup on Exit:</div>
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" class="checkbox" id="backup-exit" checked>
+                            <label for="backup-exit">Create backup copy when closing application</label>
+                        </div>
+                    </div>
+                    
+                    <div class="button-group">
+                        <button class="btn">Create Manual Backup Now</button>
+                        <button class="btn btn-secondary">Restore from Backup...</button>
+                        <button class="btn btn-danger">Clear All Auto-Save Files</button>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Bottom Buttons -->
+        <div style="padding: 0 30px 30px 30px;">
+            <div class="button-group" style="margin-top: 0; padding-top: 0; border-top: none;">
+                <button class="btn">Apply</button>
+                <button class="btn">Save & Restart</button>
+                <button class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Tab switching functionality
+        function switchTab(tabName) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tab buttons
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            tabButtons.forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

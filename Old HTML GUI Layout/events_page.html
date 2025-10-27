@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Events - Eagle Automation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        /* Main container */
+        .main-window {
+            background: #252526;
+            border-radius: 16px;
+            max-width: 1600px;
+            margin: 0 auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+            border: 1px solid #3c3c3c;
+        }
+        
+        /* Title bar */
+        .title-bar {
+            background: #1f1f1f;
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #3c3c3c;
+        }
+        
+        .title-bar h1 {
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .title-bar .controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .title-bar button {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 18px;
+        }
+        
+        .title-bar button:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+        
+        /* Page navigation */
+        .page-navigation {
+            background: #2d2d30;
+            padding: 15px 30px;
+            display: flex;
+            gap: 10px;
+            border-bottom: 1px solid #3c3c3c;
+        }
+        
+        .page-nav-link {
+            background: transparent;
+            border: none;
+            padding: 10px 20px;
+            color: #888;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .page-nav-link:hover {
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+        }
+        
+        .page-nav-link.active {
+            background: #0078d4;
+            color: white;
+        }
+        
+        /* Main content layout */
+        .content {
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            gap: 20px;
+            padding: 20px;
+            height: calc(100vh - 200px);
+        }
+        
+        /* Timeline section */
+        .timeline-section {
+            background: #2d2d30;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #3c3c3c;
+        }
+        
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .timeline-header h2 {
+            font-size: 16px;
+            color: #0078d4;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+        
+        .timeline-controls {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .timeline-btn {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #3c3c3c;
+            color: #888;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .timeline-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border-color: #0078d4;
+        }
+        
+        .timeline {
+            background: #1e1e1e;
+            height: 180px;
+            border-radius: 8px;
+            position: relative;
+            overflow-x: auto;
+            border: 1px solid #3c3c3c;
+        }
+        
+        .timeline-grid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+        }
+        
+        .timeline-marker {
+            position: absolute;
+            width: 1px;
+            height: 100%;
+            background: #3c3c3c;
+        }
+        
+        .timeline-label {
+            position: absolute;
+            top: 5px;
+            font-size: 10px;
+            color: #666;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .timeline-cursor {
+            position: absolute;
+            width: 3px;
+            height: 100%;
+            background: #ff3366;
+            left: 50%;
+            box-shadow: 0 0 10px rgba(255,51,102,0.8);
+            z-index: 10;
+        }
+        
+        .timeline-cursor::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -6px;
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 10px solid #ff3366;
+        }
+        
+        .timeline-event {
+            position: absolute;
+            height: 30px;
+            border-radius: 4px;
+            font-size: 11px;
+            padding: 6px 10px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .timeline-event:hover {
+            transform: translateY(-2px);
+            z-index: 5;
+        }
+        
+        .timeline-event.cue {
+            background: #0078d4;
+            box-shadow: 0 4px 15px rgba(0,120,212,0.4);
+            top: 30px;
+        }
+        
+        .timeline-event.switch {
+            background: #ff9800;
+            box-shadow: 0 4px 15px rgba(255,152,0,0.4);
+            top: 70px;
+        }
+        
+        .timeline-event.snapshot {
+            background: #00e676;
+            box-shadow: 0 4px 15px rgba(0,230,118,0.4);
+            top: 110px;
+        }
+        
+        /* Event list section */
+        .event-list-section {
+            background: #2d2d30;
+            border-radius: 12px;
+            border: 1px solid #3c3c3c;
+            display: grid;
+            grid-template-columns: 1fr 180px;
+            gap: 20px;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        .event-table-container {
+            overflow-y: auto;
+        }
+        
+        .event-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .event-table thead {
+            position: sticky;
+            top: 0;
+            background: #1e1e1e;
+            z-index: 5;
+        }
+        
+        .event-table th {
+            text-align: left;
+            padding: 12px 15px;
+            color: #0078d4;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid #0078d4;
+        }
+        
+        .event-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #3c3c3c;
+            font-size: 13px;
+        }
+        
+        .event-table tr {
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .event-table tr:hover {
+            background: rgba(0,120,212,0.1);
+        }
+        
+        .event-table tr.selected {
+            background: rgba(0,120,212,0.2);
+        }
+        
+        .timecode-cell {
+            font-family: 'Courier New', monospace;
+            color: #0ff;
+            font-weight: 600;
+        }
+        
+        .event-type {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .event-type.cue {
+            background: rgba(0,120,212,0.2);
+            color: #0078d4;
+            border: 1px solid #0078d4;
+        }
+        
+        .event-type.switch {
+            background: rgba(255,152,0,0.2);
+            color: #ff9800;
+            border: 1px solid #ff9800;
+        }
+        
+        .event-type.snapshot {
+            background: rgba(0,230,118,0.2);
+            color: #00e676;
+            border: 1px solid #00e676;
+        }
+        
+        .expand-btn {
+            background: transparent;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            padding: 2px 6px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .expand-btn:hover {
+            color: #0078d4;
+        }
+        
+        .sub-event {
+            background: rgba(0,120,212,0.05);
+        }
+        
+        .sub-event td {
+            padding-left: 40px;
+            font-size: 12px;
+            color: #888;
+        }
+        
+        /* Action buttons panel */
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .action-btn {
+            padding: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #3c3c3c;
+            color: #e0e0e0;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        
+        .action-btn:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: #0078d4;
+            transform: translateX(-2px);
+        }
+        
+        .action-btn.primary {
+            background: #0078d4;
+            border-color: #0078d4;
+            color: white;
+        }
+        
+        .action-btn.primary:hover {
+            background: #005a9e;
+        }
+        
+        .action-btn.danger {
+            background: rgba(255,51,102,0.1);
+            border-color: #ff3366;
+            color: #ff3366;
+        }
+        
+        .action-btn.danger:hover {
+            background: #ff3366;
+            color: white;
+        }
+        
+        .nudge-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        
+        .nudge-btn {
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #3c3c3c;
+            color: #888;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 700;
+            transition: all 0.3s;
+        }
+        
+        .nudge-btn:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: #0078d4;
+            color: #fff;
+        }
+        
+        /* Filter section */
+        .filter-section {
+            background: #2d2d30;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #3c3c3c;
+        }
+        
+        .filter-header {
+            color: #0078d4;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #0078d4;
+        }
+        
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .filter-label {
+            color: #888;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .filter-select {
+            background: #1e1e1e;
+            border: 1px solid #3c3c3c;
+            color: #e0e0e0;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .filter-select:focus {
+            outline: none;
+            border-color: #0078d4;
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.2);
+        }
+        
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        
+        .filter-btn {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #3c3c3c;
+            color: #888;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .filter-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border-color: #0078d4;
+        }
+        
+        /* Event details modal/dialog (placeholder for future) */
+        .event-details {
+            background: #2d2d30;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #3c3c3c;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .event-details.show {
+            display: block;
+        }
+        
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .detail-label {
+            color: #888;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .detail-value {
+            color: #e0e0e0;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .detail-input {
+            background: #1e1e1e;
+            border: 1px solid #3c3c3c;
+            color: #e0e0e0;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        .detail-input:focus {
+            outline: none;
+            border-color: #0078d4;
+            box-shadow: 0 0 0 3px rgba(0,120,212,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-window">
+        <!-- Title Bar -->
+        <div class="title-bar">
+            <h1>Eagle Automation - Otari Status 18R</h1>
+            <div class="controls">
+                <button title="Minimize">−</button>
+                <button title="Maximize">□</button>
+                <button title="Close">×</button>
+            </div>
+        </div>
+        
+        <!-- Page Navigation -->
+        <div class="page-navigation">
+            <a href="eagle_automation_modern_clean.html" class="page-nav-link">Console</a>
+            <a href="mix_edit_page.html" class="page-nav-link">Mix Edit</a>
+            <a href="events_page.html" class="page-nav-link active">Events</a>
+            <a href="track_sheet_page.html" class="page-nav-link">Track Sheet</a>
+            <a href="preferences_page.html" class="page-nav-link">Preferences</a>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="content">
+            <!-- Timeline Section -->
+            <div class="timeline-section">
+                <div class="timeline-header">
+                    <h2>Timeline View</h2>
+                    <div class="timeline-controls">
+                        <button class="timeline-btn">Zoom In</button>
+                        <button class="timeline-btn">Zoom Out</button>
+                        <button class="timeline-btn">Fit All</button>
+                        <button class="timeline-btn">Go to Current</button>
+                    </div>
+                </div>
+                <div class="timeline">
+                    <!-- Timeline markers -->
+                    <div class="timeline-marker" style="left: 0%;"></div>
+                    <div class="timeline-label" style="left: 0%;">00:00:00:00</div>
+                    <div class="timeline-marker" style="left: 20%;"></div>
+                    <div class="timeline-label" style="left: 20%;">00:01:00:00</div>
+                    <div class="timeline-marker" style="left: 40%;"></div>
+                    <div class="timeline-label" style="left: 40%;">00:02:00:00</div>
+                    <div class="timeline-marker" style="left: 60%;"></div>
+                    <div class="timeline-label" style="left: 60%;">00:03:00:00</div>
+                    <div class="timeline-marker" style="left: 80%;"></div>
+                    <div class="timeline-label" style="left: 80%;">00:04:00:00</div>
+                    <div class="timeline-marker" style="left: 100%;"></div>
+                    <div class="timeline-label" style="left: 100%;">00:05:00:00</div>
+                    
+                    <!-- Current time cursor -->
+                    <div class="timeline-cursor" style="left: 50%;"></div>
+                    
+                    <!-- Example events on timeline -->
+                    <div class="timeline-event cue" style="left: 10%; width: 80px;" title="Cue: Intro Start">Intro Start</div>
+                    <div class="timeline-event cue" style="left: 35%; width: 90px;" title="Cue: Verse Begin">Verse Begin</div>
+                    <div class="timeline-event switch" style="left: 25%; width: 120px;" title="Switch: Mute CH 1-4">Mute CH 1-4</div>
+                    <div class="timeline-event switch" style="left: 55%; width: 100px;" title="Switch: Solo CH 10">Solo CH 10</div>
+                    <div class="timeline-event snapshot" style="left: 15%; width: 110px;" title="Snapshot: Basic Mix">Basic Mix</div>
+                    <div class="timeline-event snapshot" style="left: 70%; width: 100px;" title="Snapshot: Full Mix">Full Mix</div>
+                </div>
+            </div>
+            
+            <!-- Event List Section -->
+            <div class="event-list-section">
+                <div class="event-table-container">
+                    <table class="event-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 30px;"></th>
+                                <th style="width: 120px;">Timecode</th>
+                                <th style="width: 100px;">Type</th>
+                                <th>Actions / Label</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="selected">
+                                <td><button class="expand-btn">▼</button></td>
+                                <td class="timecode-cell">00:00:30:00</td>
+                                <td><span class="event-type cue">Cue</span></td>
+                                <td><strong>Intro Start</strong></td>
+                            </tr>
+                            <tr>
+                                <td><button class="expand-btn">▶</button></td>
+                                <td class="timecode-cell">00:01:15:00</td>
+                                <td><span class="event-type switch">Switch</span></td>
+                                <td>4 switch changes (CH 1-4 Mutes)</td>
+                            </tr>
+                            <tr class="sub-event" style="display: none;">
+                                <td></td>
+                                <td class="timecode-cell">00:01:15:00</td>
+                                <td></td>
+                                <td>CH 1 - Mute ON</td>
+                            </tr>
+                            <tr class="sub-event" style="display: none;">
+                                <td></td>
+                                <td class="timecode-cell">00:01:15:00</td>
+                                <td></td>
+                                <td>CH 2 - Mute ON</td>
+                            </tr>
+                            <tr class="sub-event" style="display: none;">
+                                <td></td>
+                                <td class="timecode-cell">00:01:15:00</td>
+                                <td></td>
+                                <td>CH 3 - Mute ON</td>
+                            </tr>
+                            <tr class="sub-event" style="display: none;">
+                                <td></td>
+                                <td class="timecode-cell">00:01:15:00</td>
+                                <td></td>
+                                <td>CH 4 - Mute ON</td>
+                            </tr>
+                            <tr>
+                                <td><button class="expand-btn">▶</button></td>
+                                <td class="timecode-cell">00:01:45:00</td>
+                                <td><span class="event-type snapshot">Snapshot</span></td>
+                                <td><strong>Basic Mix</strong></td>
+                            </tr>
+                            <tr>
+                                <td><button class="expand-btn">▼</button></td>
+                                <td class="timecode-cell">00:02:10:00</td>
+                                <td><span class="event-type cue">Cue</span></td>
+                                <td><strong>Verse Begin</strong></td>
+                            </tr>
+                            <tr>
+                                <td><button class="expand-btn">▶</button></td>
+                                <td class="timecode-cell">00:02:45:00</td>
+                                <td><span class="event-type switch">Switch</span></td>
+                                <td>1 switch change (CH 10 Solo)</td>
+                            </tr>
+                            <tr class="sub-event" style="display: none;">
+                                <td></td>
+                                <td class="timecode-cell">00:02:45:00</td>
+                                <td></td>
+                                <td>CH 10 - Solo ON</td>
+                            </tr>
+                            <tr>
+                                <td><button class="expand-btn">▶</button></td>
+                                <td class="timecode-cell">00:03:30:00</td>
+                                <td><span class="event-type snapshot">Snapshot</span></td>
+                                <td><strong>Full Mix</strong></td>
+                            </tr>
+                            <tr>
+                                <td><button class="expand-btn">▼</button></td>
+                                <td class="timecode-cell">00:04:00:00</td>
+                                <td><span class="event-type cue">Cue</span></td>
+                                <td><strong>Chorus Entry</strong></td>
+                            </tr>
+                            <tr>
+                                <td><button class="expand-btn">▶</button></td>
+                                <td class="timecode-cell">00:04:20:00</td>
+                                <td><span class="event-type switch">Switch</span></td>
+                                <td>2 switch changes (CH 5-6 EQ)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Action Buttons Panel -->
+                <div class="action-buttons">
+                    <button class="action-btn primary">New Event</button>
+                    <button class="action-btn danger">Delete</button>
+                    <button class="action-btn">Duplicate</button>
+                    <button class="action-btn">Move</button>
+                    
+                    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #3c3c3c;">
+                        <div style="color: #888; font-size: 11px; font-weight: 600; margin-bottom: 8px; text-transform: uppercase;">Nudge</div>
+                        <div class="nudge-buttons">
+                            <button class="nudge-btn" title="Nudge backward 1 frame">◀</button>
+                            <button class="nudge-btn" title="Nudge forward 1 frame">▶</button>
+                        </div>
+                    </div>
+                    
+                    <button class="action-btn" style="margin-top: 10px;">Find Event...</button>
+                </div>
+            </div>
+            
+            <!-- Filter Section -->
+            <div class="filter-section">
+                <div class="filter-header">Event Filters</div>
+                <div class="filter-grid">
+                    <div class="filter-group">
+                        <label class="filter-label">Event Type</label>
+                        <select class="filter-select">
+                            <option value="all">All Types</option>
+                            <option value="cue">Cues Only</option>
+                            <option value="switch">Switches Only</option>
+                            <option value="snapshot">Snapshots Only</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Item</label>
+                        <select class="filter-select">
+                            <option value="all">All Items</option>
+                            <option value="mute">Mute</option>
+                            <option value="solo">Solo</option>
+                            <option value="eq">EQ</option>
+                            <option value="fader">Faders</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Path</label>
+                        <select class="filter-select">
+                            <option value="all">All Paths</option>
+                            <option value="mix">Mix Path</option>
+                            <option value="chan">Chan Path</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-buttons">
+                    <button class="filter-btn">Apply Filters</button>
+                    <button class="filter-btn">Clear Filters</button>
+                    <button class="filter-btn">Show All</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Event table row selection
+        document.querySelectorAll('.event-table tbody tr:not(.sub-event)').forEach(row => {
+            row.addEventListener('click', function(e) {
+                // Don't select if clicking expand button
+                if (e.target.classList.contains('expand-btn')) {
+                    return;
+                }
+                
+                // Remove selected class from all rows
+                document.querySelectorAll('.event-table tbody tr').forEach(r => {
+                    r.classList.remove('selected');
+                });
+                
+                // Add selected class to clicked row
+                this.classList.add('selected');
+            });
+        });
+        
+        // Expand/collapse functionality for switch events
+        document.querySelectorAll('.expand-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                
+                const row = this.closest('tr');
+                const nextRows = [];
+                let nextRow = row.nextElementSibling;
+                
+                // Collect all sub-event rows
+                while (nextRow && nextRow.classList.contains('sub-event')) {
+                    nextRows.push(nextRow);
+                    nextRow = nextRow.nextElementSibling;
+                }
+                
+                // Toggle visibility
+                if (this.textContent === '▶') {
+                    this.textContent = '▼';
+                    nextRows.forEach(r => r.style.display = 'table-row');
+                } else {
+                    this.textContent = '▶';
+                    nextRows.forEach(r => r.style.display = 'none');
+                }
+            });
+        });
+        
+        // Timeline event click to select
+        document.querySelectorAll('.timeline-event').forEach(event => {
+            event.addEventListener('click', function() {
+                // Could scroll to and select the event in the table
+                console.log('Timeline event clicked:', this.textContent);
+            });
+        });
+        
+        // Action buttons
+        document.querySelector('.action-btn.primary').addEventListener('click', function() {
+            alert('New Event dialog would open here');
+        });
+        
+        document.querySelector('.action-btn.danger').addEventListener('click', function() {
+            const selected = document.querySelector('.event-table tr.selected');
+            if (selected) {
+                if (confirm('Delete selected event?')) {
+                    selected.remove();
+                }
+            } else {
+                alert('Please select an event to delete');
+            }
+        });
+    </script>
+</body>
+</html>

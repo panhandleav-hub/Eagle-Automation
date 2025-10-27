@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Threading;
+using Serilog;
 using EagleAutomation.Views;
 using EagleAutomation.Controllers;
 using EagleAutomation.Models;
@@ -12,9 +15,12 @@ namespace EagleAutomation
     /// </summary>
     public partial class MainWindow : Window
     {
+        private static readonly ILogger Log = Serilog.Log.ForContext<MainWindow>();
         private readonly SerialController _serialController;
         private readonly DispatcherTimer _timeCodeTimer;
         private TimeSpan _currentTimeCode;
+        private readonly List<ChannelStrip> _channelStrips;
+        private AutomationMode _currentAutomationMode = AutomationMode.Read;
 
         public MainWindow()
         {
@@ -22,6 +28,9 @@ namespace EagleAutomation
 
             // Initialize serial controller
             _serialController = new SerialController();
+
+            // Initialize channel strips collection
+            _channelStrips = new List<ChannelStrip>();
 
             // Initialize timecode display timer
             _timeCodeTimer = new DispatcherTimer
@@ -33,6 +42,9 @@ namespace EagleAutomation
 
             // Initialize connection to console
             InitializeConsoleConnection();
+
+            // Create all 32 channel strips
+            CreateChannelStrips();
         }
 
         /// <summary>
@@ -42,14 +54,15 @@ namespace EagleAutomation
         {
             try
             {
-                // TODO: Load COM port settings from configuration
-                // For now, attempting COM1 at 19200 baud (common for Status 18R)
-                bool connected = _serialController.Connect("COM1", 19200);
+                // Load COM port settings from configuration
+                var config = App.Configuration.SerialPort;
+                bool connected = _serialController.Connect(config);
 
                 if (connected)
                 {
                     MessageBox.Show(
-                        "Successfully connected to Otari Status 18R on COM1",
+                        $"Successfully connected to {App.Configuration.Console.Model}\n" +
+                        $"Port: {config.PortName} @ {config.BaudRate} baud",
                         "Connection Established",
                         MessageBoxButton.OK,
                         MessageBoxImage.Information
@@ -61,7 +74,7 @@ namespace EagleAutomation
                         "Could not connect to console. Please check:\n" +
                         "1. Console is powered on\n" +
                         "2. RS-232 cable is connected to AUTOMATION PC port\n" +
-                        "3. Correct COM port is selected\n\n" +
+                        $"3. Correct COM port ({config.PortName}) is selected\n\n" +
                         "You can change settings in Preferences.",
                         "Connection Failed",
                         MessageBoxButton.OK,
@@ -99,6 +112,57 @@ namespace EagleAutomation
         }
 
         /// <summary>
+        /// Create all 32 channel strips and add to panel
+        /// </summary>
+        private void CreateChannelStrips()
+        {
+            int channelCount = App.Configuration.Console.ChannelCount;
+
+            for (int i = 1; i <= channelCount; i++)
+            {
+                var channelStrip = new ChannelStrip
+                {
+                    ChannelNumber = i,
+                    SerialController = _serialController,
+                    FaderLevel = 75, // Default fader position
+                    IsAutomationEnabled = false
+                };
+
+                _channelStrips.Add(channelStrip);
+                ChannelStripsPanel.Children.Add(channelStrip);
+            }
+
+            // Set initial automation mode on all strips
+            UpdateAllChannelAutomation(_currentAutomationMode);
+        }
+
+        /// <summary>
+        /// Handle channels per row selection change
+        /// </summary>
+        private void OnChannelsPerRowChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ChannelsPerRowCombo.SelectedItem is ComboBoxItem item)
+            {
+                int channelsPerRow = int.Parse(item.Content.ToString() ?? "8");
+
+                // Update WrapPanel width to accommodate the selected number of channels
+                // Each channel strip is ~110 pixels wide (100 + margins)
+                ChannelStripsPanel.MaxWidth = channelsPerRow * 110;
+            }
+        }
+
+        /// <summary>
+        /// Update automation mode on all channel strips
+        /// </summary>
+        private void UpdateAllChannelAutomation(AutomationMode mode)
+        {
+            foreach (var strip in _channelStrips)
+            {
+                strip.SetAutomationMode(mode);
+            }
+        }
+
+        /// <summary>
         /// Set automation mode on the console
         /// </summary>
         private void SetAutomationMode(object sender, RoutedEventArgs e)
@@ -119,11 +183,16 @@ namespace EagleAutomation
             };
 
             // Send command to console via serial
-            // TODO: Replace with actual protocol command once reverse engineered
             bool success = _serialController.SetAutomationMode(mode);
 
             if (success)
             {
+                // Save current mode
+                _currentAutomationMode = mode;
+
+                // Update all channel strips to show the new mode
+                UpdateAllChannelAutomation(mode);
+
                 // Update UI to show active mode
                 // Reset all buttons to secondary style
                 BtnRead.Style = (Style)FindResource("SecondaryButton");
@@ -135,6 +204,8 @@ namespace EagleAutomation
 
                 // Highlight selected button
                 button.Style = (Style)FindResource("PrimaryButton");
+
+                Log.Information("Automation mode changed to: {Mode}", mode);
             }
             else
             {
